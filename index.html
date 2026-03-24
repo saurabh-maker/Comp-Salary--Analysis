@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optical PM Japan · Talent Intelligence Report</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface2: #f0f2f5;
+    --border: #e2e6ed;
+    --border-light: #eef0f4;
+    --text: #1a2332;
+    --text-dim: #4a5568;
+    --text-muted: #8a96a8;
+    --accent: #2563eb;
+    --accent-light: #eff4ff;
+    --accent2: #059669;
+    --accent2-light: #ecfdf5;
+    --accent3: #d97706;
+    --accent3-light: #fffbeb;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --purple: #7c3aed;
+    --purple-light: #f5f3ff;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.6; }
+
+  /* ---- HEADER ---- */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-icon {
+    width: 44px; height: 44px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .header-title { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--text); }
+  .header-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .header-meta {
+    display: flex; gap: 24px; flex-wrap: wrap;
+  }
+  .meta-item { text-align: right; }
+  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+  .meta-value { font-size: 13px; font-weight: 600; color: var(--text-dim); margin-top: 1px; }
+
+  /* ---- NAV ---- */
+  .nav-wrap {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-tab {
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .nav-tab:hover { color: var(--text-dim); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* ---- SECTIONS ---- */
+  .section { display: none; padding: 32px 48px 48px; max-width: 1400px; margin: 0 auto; }
+  .section.active { display: block; }
+
+  /* ---- SECTION HEADER ---- */
+  .section-header { margin-bottom: 24px; }
+  .section-header h2 { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--text); }
+  .section-header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  /* ---- KPI GRID ---- */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--kpi-clr, var(--accent));
+    border-radius: 3px 0 0 3px;
+  }
+  .kpi-icon { font-size: 18px; margin-bottom: 8px; }
+  .kpi-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .kpi-value { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--kpi-clr, var(--accent)); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ---- FILTER BAR ---- */
+  .filter-bar {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 18px; margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .filter-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-right: 4px; }
+  .filter-select, .search-input {
+    padding: 7px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    cursor: pointer;
+  }
+  .filter-select:focus, .search-input:focus { border-color: var(--accent); }
+  .search-input { min-width: 220px; }
+  .search-input::placeholder { color: var(--text-muted); }
+  .filter-count {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+  .btn-clear {
+    padding: 7px 14px;
+    background: var(--red-light);
+    border: 1px solid #fecaca;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--red);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-clear:hover { background: #fee2e2; }
+
+  /* ---- CHART GRID ---- */
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+  }
+  .chart-card.wide { grid-column: span 2; }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chart-desc { font-size: 11px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5; }
+  .chart-wrap { position: relative; height: 210px; }
+  .chart-wrap-lg { position: relative; height: 270px; }
+  .chart-wrap-xl { position: relative; height: 320px; }
+
+  /* ---- MAP ---- */
+  #talentMap { height: 440px; border-radius: 10px; border: 1px solid var(--border); }
+  .map-legend {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 16px; margin-top: 12px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ---- TABLE ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+  thead th {
+    background: var(--surface2);
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+  }
+  thead th:hover { color: var(--accent); }
+  thead th.sorted { color: var(--accent); }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 12px;
+    vertical-align: middle;
+    background: var(--surface);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--accent-light) !important; }
+  .td-name { font-weight: 600; color: var(--text); }
+  .td-title { color: var(--text-dim); font-size: 11px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .td-co { color: var(--accent); font-size: 11px; font-weight: 500; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .td-sal { font-family: 'JetBrains Mono', monospace; color: var(--accent2); font-weight: 500; }
+  .td-num { font-family: 'JetBrains Mono', monospace; color: var(--text-dim); }
+
+  /* ---- BADGES ---- */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .b-uncontacted { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+  .b-contacted { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+  .b-replied { background: var(--accent2-light); color: var(--accent2); border: 1px solid #a7f3d0; }
+  .b-vh { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  .b-h { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+  .b-m { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+  .b-l { background: var(--accent2-light); color: var(--accent2); border: 1px solid #a7f3d0; }
+  .b-vl { background: var(--accent-light); color: var(--accent); border: 1px solid #bfdbfe; }
+
+  /* ---- COMPANY CARDS ---- */
+  .company-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .company-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .company-card:hover { box-shadow: var(--shadow-md); border-color: var(--accent); }
+  .company-logo {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    background: var(--accent-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .company-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .company-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; line-height: 1.6; }
+  .company-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+  .company-tag {
+    font-size: 10px; padding: 2px 8px; border-radius: 12px;
+    background: var(--surface2); color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  /* ---- INSIGHT CARDS ---- */
+  .insight-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .insight-card.highlight { border-left: 3px solid var(--accent); }
+  .insight-card.warn { border-left: 3px solid var(--accent3); }
+  .insight-card.danger { border-left: 3px solid var(--red); }
+  .insight-card.good { border-left: 3px solid var(--accent2); }
+  .insight-icon { font-size: 22px; margin-bottom: 10px; }
+  .insight-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .insight-body { font-size: 12px; color: var(--text-dim); line-height: 1.7; }
+  .insight-stat { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--accent); margin-bottom: 2px; }
+
+  /* ---- ANNOTATION CHIP ---- */
+  .chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .chip-up { background: var(--accent2-light); color: var(--accent2); }
+  .chip-down { background: var(--red-light); color: var(--red); }
+  .chip-neutral { background: var(--surface2); color: var(--text-muted); }
+
+  /* ---- TREND CALLOUT ---- */
+  .trend-callout {
+    display: flex; gap: 12px;
+    background: var(--accent-light);
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: var(--accent);
+    align-items: flex-start;
+  }
+  .trend-callout.warn { background: var(--accent3-light); border-color: #fde68a; color: #92400e; }
+  .trend-callout.danger { background: var(--red-light); border-color: #fecaca; color: var(--red); }
+  .trend-callout.good { background: var(--accent2-light); border-color: #a7f3d0; color: #065f46; }
+
+  /* ---- PROGRESS BAR ---- */
+  .prog-wrap { margin-bottom: 10px; }
+  .prog-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+  .prog-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 3px; transition: width 0.6s; }
+
+  /* ---- SCROLLBAR ---- */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ---- FOOTER ---- */
+  .footer {
+    text-align: center; padding: 20px 48px;
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-muted);
+    background: var(--surface);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ---- POPUP ---- */
+  .leaflet-popup-content-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+  }
+  .leaflet-popup-tip { background: var(--surface); }
+  .popup-name { font-weight: 700; font-size: 13px; color: var(--accent); margin-bottom: 5px; }
+  .popup-row { color: var(--text-dim); margin: 3px 0; }
+  .popup-sal { font-weight: 600; color: var(--accent2); }
+
+  /* ---- TIER BUTTONS ---- */
+  .tier-btn {
+    padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: 'DM Sans',sans-serif;
+  }
+  .tier-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .tier-btn.tier-active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  /* ---- COMPANY TILES ---- */
+  .co-tile {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; box-shadow: var(--shadow); transition: box-shadow 0.15s, border-color 0.15s;
+    position: relative; overflow: hidden;
+  }
+  .co-tile:hover { box-shadow: var(--shadow-md); border-color: var(--accent); }
+  .co-tile.in-pool { border-left: 3px solid var(--accent2); }
+  .co-tile-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; }
+  .co-tile-rank {
+    width: 20px; height: 20px; border-radius: 4px; font-size: 9px; font-weight: 700;
+    font-family: 'JetBrains Mono',monospace; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0; color: white;
+  }
+  .co-tile-name { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .co-tile-meta { font-size: 10px; color: var(--text-muted); line-height: 1.5; }
+  .co-tile-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+  .co-tile-tag { font-size: 9px; padding: 1px 6px; border-radius: 10px; background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+  .co-pool-badge { position: absolute; top: 7px; right: 8px; font-size: 9px; font-weight: 700; padding: 2px 6px; background: var(--accent2-light); color: var(--accent2); border: 1px solid #a7f3d0; border-radius: 10px; }
+
+  @media (max-width: 768px) {
+    .header, .nav-wrap, .section { padding-left: 16px; padding-right: 16px; }
+    .chart-card.wide { grid-column: span 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">🔭</div>
+    <div>
+      <div class="header-title">Optical PM Japan — Talent Intelligence</div>
+      <div class="header-sub">Combined analysis: LinkedIn (192) + Revelio (79) + Market Job Posting Data · Jan 2024 – Mar 2026</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="meta-item">
+      <div class="meta-label">Prepared for</div>
+      <div class="meta-value">Leadership Review</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Report Date</div>
+      <div class="meta-value" id="rDate"></div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Data Sources</div>
+      <div class="meta-value">LinkedIn · Revelio · Job Market</div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav-wrap">
+  <div class="nav-tab active" onclick="goTab('overview',this)">
+    <div class="nav-dot" style="background:#2563eb"></div> Overview & Map
+  </div>
+  <div class="nav-tab" onclick="goTab('market',this)">
+    <div class="nav-dot" style="background:#059669"></div> Hiring Demand
+  </div>
+  <div class="nav-tab" onclick="goTab('salary',this)">
+    <div class="nav-dot" style="background:#d97706"></div> Salary Intelligence
+  </div>
+  <div class="nav-tab" onclick="goTab('companies',this)">
+    <div class="nav-dot" style="background:#7c3aed"></div> Top Companies
+  </div>
+  <div class="nav-tab" onclick="goTab('candidates',this)">
+    <div class="nav-dot" style="background:#0891b2"></div> Talent Pool
+  </div>
+  <div class="nav-tab" onclick="goTab('insights',this)">
+    <div class="nav-dot" style="background:#dc2626"></div> Key Insights
+  </div>
+</div>
+
+<!-- ===================== OVERVIEW ===================== -->
+<div id="tab-overview" class="section active">
+  <div class="section-header">
+    <h2>Executive Overview</h2>
+    <p>High-level summary of the Optical Project Manager talent landscape in Japan — talent residency map, pool composition, and pipeline status.</p>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card" style="--kpi-clr:#2563eb">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-label">Total Talent Pool</div>
+      <div class="kpi-value">271</div>
+      <div class="kpi-sub">LinkedIn + Revelio combined</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#0891b2">
+      <div class="kpi-icon">🌐</div>
+      <div class="kpi-label">English Speakers</div>
+      <div class="kpi-value">97</div>
+      <div class="kpi-sub">36% of pool · identified via LinkedIn</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#059669">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-label">Avg. Total Comp</div>
+      <div class="kpi-value">$72K</div>
+      <div class="kpi-sub">Revelio dataset · rising to $98K</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#d97706">
+      <div class="kpi-icon">⏱</div>
+      <div class="kpi-label">Avg. Time to Fill</div>
+      <div class="kpi-value">85 days</div>
+      <div class="kpi-sub">Avg across Jan 2024–Mar 2026</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#dc2626">
+      <div class="kpi-icon">✈️</div>
+      <div class="kpi-label">High Flight Risk</div>
+      <div class="kpi-value">57%</div>
+      <div class="kpi-sub">Open to new opportunities</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#7c3aed">
+      <div class="kpi-icon">📋</div>
+      <div class="kpi-label">Active Job Postings</div>
+      <div class="kpi-value">1</div>
+      <div class="kpi-sub">Down from peak of 10 · Mar 2026</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#0891b2">
+      <div class="kpi-icon">🎯</div>
+      <div class="kpi-label">Replied / Engaged</div>
+      <div class="kpi-value">5</div>
+      <div class="kpi-sub">Active in outreach pipeline</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#059669">
+      <div class="kpi-icon">🌐</div>
+      <div class="kpi-label">Remote Suitable</div>
+      <div class="kpi-value">59%</div>
+      <div class="kpi-sub">Very High remote suitability</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#2563eb">
+      <div class="kpi-icon">📍</div>
+      <div class="kpi-label">Tokyo Based</div>
+      <div class="kpi-value">62%</div>
+      <div class="kpi-sub">Concentrated in Tokyo metro</div>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;">📍 Talent Residency Map — Where Optical PMs Are Located in Japan</div>
+  <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">Each pin represents a profiled candidate. Click any pin for full details. Color indicates pipeline outreach status.</div>
+  <div id="talentMap"></div>
+  <div class="map-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#64748b"></div> Uncontacted (157)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Contacted (30)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#059669"></div> Replied (5)</div>
+    <div class="legend-item" style="margin-left:auto;font-size:11px;color:var(--text-muted);">Source: LinkedIn + Revelio · Coordinates approximate</div>
+  </div>
+
+  <div class="divider"></div>
+  <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:16px;">Location & Experience Distribution</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">Where Talent Is Based</div>
+      <div class="chart-desc">Primary locations of 79 profiled candidates (Revelio dataset)</div>
+      <div class="chart-wrap"><canvas id="locChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Years of Experience Distribution</div>
+      <div class="chart-desc">The pool skews highly experienced — median of 20 years in their field</div>
+      <div class="chart-wrap"><canvas id="expChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Flight Risk Distribution</div>
+      <div class="chart-desc">57% show High or Very High flight risk — active opportunity for outreach</div>
+      <div class="chart-wrap"><canvas id="flightChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Remote Work Suitability</div>
+      <div class="chart-desc">59% rated Very High remote suitability — widens hiring geography</div>
+      <div class="chart-wrap"><canvas id="remoteChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TOP 50 COMPANIES SECTION -->
+  <div class="divider"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:8px;">
+    <div>
+      <div style="font-size:16px;font-weight:700;color:var(--text);font-family:'DM Serif Display',serif;">🏢 Top 50 Companies — Where Optical PM Talent Works in Japan</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Sourcer-validated target companies · Tiered by PM hiring relevance for Optical / Photonics / Network roles · Source: Talent Intelligence Research</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;" id="tierFilterBtns">
+      <button onclick="filterTier('all',this)" class="tier-btn tier-active">All 50</button>
+      <button onclick="filterTier('1',this)" class="tier-btn">🔴 Tier 1 — Telecom Operators</button>
+      <button onclick="filterTier('2',this)" class="tier-btn">🟠 Tier 2 — Optical Vendors</button>
+      <button onclick="filterTier('3',this)" class="tier-btn">🟡 Tier 3 — Fiber & Infra</button>
+      <button onclick="filterTier('4',this)" class="tier-btn">🟢 Tier 4 — Photonics</button>
+      <button onclick="filterTier('5',this)" class="tier-btn">🔵 Tier 5 — Niche / Subsea</button>
+    </div>
+  </div>
+
+  <div style="background:var(--accent-light);border:1px solid #bfdbfe;border-radius:8px;padding:11px 16px;margin-bottom:18px;font-size:12px;color:#1d4ed8;display:flex;gap:10px;align-items:center;">
+    <span>💡</span>
+    <span><strong>Sourcer Insight:</strong> ~80% of Optical PM talent sits in Tier 1 (NTT/KDDI/SoftBank) and Tier 2 (NEC/Fujitsu/Nokia/Cisco). Tier 3–5 offer hidden talent with deeper domain expertise. Our talent pool already contains profiles from Rakuten, AWS, NEC, Colt, Ericsson, Cisco, DENSO, Sumitomo, and Mitsubishi Heavy.</span>
+  </div>
+
+  <div id="companyTilesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:12px;"></div>
+
+  <div style="font-size:11px;color:var(--text-muted);text-align:right;margin-top:4px;">✅ Companies highlighted in green = talent already identified in our pool &nbsp;·&nbsp; Source: Talent Intelligence Research + LinkedIn Mapping</div>
+</div>
+
+<!-- ===================== MARKET / HIRING DEMAND ===================== -->
+<div id="tab-market" class="section">
+  <div class="section-header">
+    <h2>Hiring Demand & Job Market Trends</h2>
+    <p>Weekly job posting activity for "Project and IT Specialist" roles in Japan, Jan 2024 – Mar 2026. Covers active postings volume, new listings, and time-to-fill difficulty.</p>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+    <div class="kpi-card" style="--kpi-clr:#2563eb">
+      <div class="kpi-label">Total New Postings</div>
+      <div class="kpi-value">63</div>
+      <div class="kpi-sub">Jan 2024 – Mar 2026</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#d97706">
+      <div class="kpi-label">Peak Active Postings</div>
+      <div class="kpi-value">10</div>
+      <div class="kpi-sub">Reached Oct 2024 & Jun 2025</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#dc2626">
+      <div class="kpi-label">Current Active (Mar 26)</div>
+      <div class="kpi-value">1</div>
+      <div class="kpi-sub">Significant drop from peak</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#7c3aed">
+      <div class="kpi-label">Avg. Time to Fill</div>
+      <div class="kpi-value">85 days</div>
+      <div class="kpi-sub">Roles stay open ~12 weeks avg</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#dc2626">
+      <div class="kpi-label">Max Time to Fill</div>
+      <div class="kpi-value">189 days</div>
+      <div class="kpi-sub">Peak difficulty Oct 2024</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#dc2626">
+      <div class="kpi-label">Current Time to Fill</div>
+      <div class="kpi-value">182 days</div>
+      <div class="kpi-sub">Critically long – scarce talent</div>
+    </div>
+  </div>
+
+  <div class="trend-callout warn">
+    <span>⚠️</span>
+    <span><strong>Demand is Declining but Roles Stay Difficult to Fill:</strong> Active postings have fallen from a peak of 10 to just 1 by March 2026, yet time-to-fill has climbed back to 182 days — signaling that fewer openings exist, but those that do are extremely hard to close. This points to a <strong>supply-constrained talent market</strong>.</span>
+  </div>
+
+  <div class="chart-grid" style="grid-template-columns:1fr">
+    <div class="chart-card wide">
+      <div class="chart-title">
+        Active Job Postings Over Time
+        <span style="font-size:11px;font-weight:400;color:var(--text-muted)">Weekly · Jan 2024 – Mar 2026</span>
+      </div>
+      <div class="chart-desc">Number of live postings each week. Peaked at 10 during Oct 2024 and Jun 2025 hiring surges. Now declining — market cooling or roles being pulled.</div>
+      <div class="chart-wrap-xl"><canvas id="activePostChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">New Postings Added Per Week</div>
+      <div class="chart-desc">Spikes represent bursts of fresh hiring activity. Most weeks see 0 new postings — demand is episodic, not continuous.</div>
+      <div class="chart-wrap-lg"><canvas id="newPostChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Time to Fill — Days Open (Weekly)</div>
+      <div class="chart-desc">How long roles stay open. The avg is 85 days; March 2026 is back at 182 days — a critical indicator of hiring difficulty.</div>
+      <div class="chart-wrap-lg"><canvas id="ttfChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-grid" style="grid-template-columns:1fr">
+    <div class="chart-card">
+      <div class="chart-title">Monthly Hiring Activity Overview — New vs. Removed Postings</div>
+      <div class="chart-desc">Grouped monthly view showing new positions opening vs. roles being removed (filled or cancelled). Q4 2024 saw the highest churn.</div>
+      <div class="chart-wrap-xl"><canvas id="monthlyPostChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SALARY ===================== -->
+<div id="tab-salary" class="section">
+  <div class="section-header">
+    <h2>Salary Intelligence</h2>
+    <p>Advertised salary trends for Project and IT Specialist roles in Japan, Jan 2024 – Mar 2026. Shows how compensation expectations have shifted significantly upward.</p>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card" style="--kpi-clr:#059669">
+      <div class="kpi-label">Current Advertised Salary</div>
+      <div class="kpi-value">$97.8K</div>
+      <div class="kpi-sub">Mar 2026 · All-time high</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#d97706">
+      <div class="kpi-label">Average (Full Period)</div>
+      <div class="kpi-value">$58.3K</div>
+      <div class="kpi-sub">Across Jan 2024 – Mar 2026</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#dc2626">
+      <div class="kpi-label">Starting Point (Jan 2024)</div>
+      <div class="kpi-value">$63.7K</div>
+      <div class="kpi-sub">Then dipped before surging</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#dc2626">
+      <div class="kpi-label">Lowest Point</div>
+      <div class="kpi-value">$49.4K</div>
+      <div class="kpi-sub">Jul 2025 · before major surge</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#059669">
+      <div class="kpi-label">Salary Growth (Jul25→Mar26)</div>
+      <div class="kpi-value">+98%</div>
+      <div class="kpi-sub">From $49K to $97.8K in 8 months</div>
+    </div>
+    <div class="kpi-card" style="--kpi-clr:#059669">
+      <div class="kpi-label">YoY Growth (2024→2026)</div>
+      <div class="kpi-value">+54%</div>
+      <div class="kpi-sub">From ~$63.7K to $97.8K</div>
+    </div>
+  </div>
+
+  <div class="trend-callout good">
+    <span>📈</span>
+    <span><strong>Salary is Rising Sharply:</strong> After a steady softening through H1 2025, advertised salaries have surged dramatically — from $49K in July 2025 to $97.8K by March 2026, a near-doubling in 8 months. This reflects both talent scarcity and heightened demand from top-tier employers. <strong>Compensation expectations must be recalibrated immediately.</strong></span>
+  </div>
+
+  <div class="chart-grid" style="grid-template-columns:1fr">
+    <div class="chart-card">
+      <div class="chart-title">
+        Advertised Salary Trend — Weekly
+        <span style="font-size:11px;font-weight:400;color:var(--text-muted)">Project & IT Specialist · USD · Jan 2024–Mar 2026</span>
+      </div>
+      <div class="chart-desc">The green zone highlights the sharp upward shift beginning Sep 2025, when salaries broke above the $65K ceiling and accelerated to record highs.</div>
+      <div class="chart-wrap-xl"><canvas id="salTrendChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">Salary Phases — Year over Year</div>
+      <div class="chart-desc">Average salary grouped by quarter to show the market trajectory more clearly</div>
+      <div class="chart-wrap-lg"><canvas id="salQtrChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Talent Pool Compensation (Revelio · 79 Candidates)</div>
+      <div class="chart-desc">Distribution of total compensation among profiled candidates — majority in $50K–$90K range</div>
+      <div class="chart-wrap-lg"><canvas id="salDistChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-top:16px;">
+    <div class="chart-title">Top 12 Employers by Avg. Total Compensation (Revelio Data)</div>
+    <div class="chart-desc">Highest-paying employers in the talent pool — useful for competitive benchmarking and counter-offer preparation</div>
+    <div class="chart-wrap-xl"><canvas id="salCoChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ===================== COMPANIES ===================== -->
+<div id="tab-companies" class="section">
+  <div class="section-header">
+    <h2>Top 50 Companies — Optical PM Talent Universe in Japan</h2>
+    <p>Sourcer-researched market map across 5 tiers. Combines our live talent pool data with the full Japan optical/photonics/telecom landscape. Covers roles equivalent to Ciena-type Optical Project Managers.</p>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:24px;">
+    <div class="kpi-card" style="--kpi-clr:#2563eb"><div class="kpi-label">Market Companies Mapped</div><div class="kpi-value">50+</div><div class="kpi-sub">Across 5 tiers / segments</div></div>
+    <div class="kpi-card" style="--kpi-clr:#059669"><div class="kpi-label">Est. Total Talent Pool</div><div class="kpi-value">300–500</div><div class="kpi-sub">Optical PM-level in Japan</div></div>
+    <div class="kpi-card" style="--kpi-clr:#d97706"><div class="kpi-label">Tier 1+2 Share</div><div class="kpi-value">~80%</div><div class="kpi-sub">NTT, NEC, Fujitsu, Nokia, Cisco</div></div>
+    <div class="kpi-card" style="--kpi-clr:#7c3aed"><div class="kpi-label">In Our Live Pool</div><div class="kpi-value">192</div><div class="kpi-sub">LinkedIn profiled · 79 Revelio</div></div>
+    <div class="kpi-card" style="--kpi-clr:#dc2626"><div class="kpi-label">Talent Concentration</div><div class="kpi-value">Tokyo</div><div class="kpi-sub">+ Kawasaki + Osaka corridor</div></div>
+  </div>
+
+  <div class="trend-callout">
+    <span>🔍</span>
+    <span><strong>Sourcer Intelligence:</strong> Japan is a <strong>closed + niche</strong> optical market. Talent is highly company-loyal, often Japanese-language required, and concentrated in few dominant ecosystems. Best hires = vendor-side PMs (Nokia / Cisco / NEC) OR NTT ecosystem talent. Japan has 70+ telecom/fiber companies and 100+ photonics firms — this list narrows to the 50 most PM-relevant.</span>
+  </div>
+
+  <div class="chart-grid" style="margin-bottom:28px;">
+    <div class="chart-card">
+      <div class="chart-title">Talent Count by Employer (LinkedIn · Our Pool)</div>
+      <div class="chart-desc">Companies where the most identified optical PM talent currently works in our live dataset</div>
+      <div class="chart-wrap-lg"><canvas id="coLiChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Average Salary by Employer (Revelio · Top 12)</div>
+      <div class="chart-desc">Competitive benchmarks — higher-paying employers are harder to recruit from but signal premium talent</div>
+      <div class="chart-wrap-lg"><canvas id="coSalChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TIER 1 -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+    <div style="background:#dcfce7;border:1px solid #a7f3d0;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:0.8px;">🟢 Tier 1 — Telecom Operators</div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);">Highest PM Demand · Deployment Roles · ~40% of talent pool</div>
+  </div>
+  <div class="company-grid" style="margin-bottom:28px;">
+    <div class="company-card"><div class="company-logo" style="background:#dcfce7;">📶</div><div><div class="company-name">NTT Group <span style="font-size:10px;background:#dcfce7;color:#065f46;padding:2px 6px;border-radius:4px;margin-left:4px;">⭐ #1 Priority</span></div><div class="company-meta">NTT / NTT Comms / NTT East / NTT West / NTT Data (5 entities). Building <strong>IOWN 2.0</strong> All-Photonics Network. World's highest-capacity 192-core submarine cable (2025). Largest optical PM concentration in Japan.</div><div class="company-tags"><span class="company-tag">IOWN Optical</span><span class="company-tag">Submarine Cable</span><span class="company-tag">5 Sub-entities</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#dcfce7;">📡</div><div><div class="company-name">KDDI + KDDI Research <span style="font-size:10px;background:#dcfce7;color:#065f46;padding:2px 6px;border-radius:4px;margin-left:4px;">⭐ Priority</span></div><div class="company-meta">45.5M IoT lines by 2024. Starlink Direct to Cell (1M+ users). Active fiber rollout + 5G backhaul optical PM roles. Dense Tokyo and regional presence. Co-building 5G with SoftBank.</div><div class="company-tags"><span class="company-tag">5G Optical Backhaul</span><span class="company-tag">IoT</span><span class="company-tag">Satellite</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#dcfce7;">📱</div><div><div class="company-name">SoftBank Corp</div><div class="company-meta">Network automation pioneer. Ericsson latency optimization trials. AI-driven RAN. Sub-5ms round-trip delay achieved (2024). Strong optical backhaul PM roles. Enterprise private 5G growth engine.</div><div class="company-tags"><span class="company-tag">Optical Backhaul</span><span class="company-tag">5G SA</span><span class="company-tag">Network Automation</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#dcfce7;">🚀</div><div><div class="company-name">Rakuten Mobile <span style="font-size:10px;background:#fffbeb;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px;">8 in pool</span></div><div class="company-meta">Japan's Open RAN pioneer. 9M+ subscribers. Optical backhaul PM roles across its cloud-native network. <strong>Most candidates (8) in our LinkedIn pool</strong> — largest single-company presence.</div><div class="company-tags"><span class="company-tag">Open RAN</span><span class="company-tag">Cloud-Native</span><span class="company-tag">8 Candidates</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#dcfce7;">🌸</div><div><div class="company-name">Rakuten Symphony</div><div class="company-meta">Rakuten's global telecom software spin-off. Optical network virtualization and cloud RAN programs. PM roles for network transformation and open optical stack deployments.</div><div class="company-tags"><span class="company-tag">vRAN</span><span class="company-tag">Cloud Optical</span><span class="company-tag">Network SW</span></div></div></div>
+  </div>
+
+  <!-- TIER 2 -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+    <div style="background:#eff4ff;border:1px solid #bfdbfe;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.8px;">🔵 Tier 2 — Optical / Network Vendors</div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);">Closest to Ciena-type roles · Best conversion · ~30% of pool</div>
+  </div>
+  <div class="company-grid" style="margin-bottom:28px;">
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">🔧</div><div><div class="company-name">NEC Corporation <span style="font-size:10px;background:#fffbeb;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px;">4 in pool</span></div><div class="company-meta">Major optical transport + 5G vendor. IOWN partner with NTT. Strong digital government and submarine cable PM roles. 4 candidates in our LinkedIn pool including Yusuke Shimazu (PM, contacted).</div><div class="company-tags"><span class="company-tag">Optical Transport</span><span class="company-tag">5G</span><span class="company-tag">4 Candidates</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">💻</div><div><div class="company-name">Fujitsu <span style="font-size:10px;background:#dcfce7;color:#065f46;padding:2px 6px;border-radius:4px;margin-left:4px;">⭐ 1FINITY = Ciena Competitor</span></div><div class="company-meta">Fujitsu 1FINITY = direct Ciena competitor. Known profiles: Param Rajeshirke (Optical Systems PM) · Shingo Mizuno (Network/Optical Business Leader). Highest-relevance talent — DWDM + optical transport.</div><div class="company-tags"><span class="company-tag">1FINITY Optical</span><span class="company-tag">DWDM</span><span class="company-tag">Ciena Competitor</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">🌐</div><div><div class="company-name">Nokia Japan <span style="font-size:10px;background:#fffbeb;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px;">5 in pool</span></div><div class="company-meta">5 candidates in pool. Voltaire Balisnomo (PM, $105K, High flight risk). DWDM + optical transport + RAN. Supplies Rakuten Mobile. Key Ciena competitor in optical routing/transport.</div><div class="company-tags"><span class="company-tag">Optical Routing</span><span class="company-tag">DWDM</span><span class="company-tag">5 Candidates</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">🔵</div><div><div class="company-name">Cisco Systems Japan <span style="font-size:10px;background:#dcfce7;color:#065f46;padding:2px 6px;border-radius:4px;margin-left:4px;">⭐ Ha Ngo — UNCONTACTED</span></div><div class="company-meta"><strong>Ha Ngo</strong> = "Solution Engineers – Optical Specialist" · $84.8K · Medium flight risk. Direct optical title. Cisco routing + optical portfolio = Ciena-adjacent. <strong>Top outreach priority.</strong></div><div class="company-tags"><span class="company-tag">Optical Specialist ⭐</span><span class="company-tag">Routing</span><span class="company-tag">UNCONTACTED</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">⚡</div><div><div class="company-name">Mitsubishi Electric</div><div class="company-meta">Optical systems, space communications, and industrial photonics. PM roles in optical systems integration and large infrastructure delivery programs. Space optical comms R&D.</div><div class="company-tags"><span class="company-tag">Optical Systems</span><span class="company-tag">Space Comms</span><span class="company-tag">Industrial</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">🏗</div><div><div class="company-name">Hitachi (incl. Hitachi Energy)</div><div class="company-meta">Hitachi Social Innovation Business — optical networks for smart city, rail, and industrial. Hitachi Energy telecom units. PM roles in large-scale optical infra programs.</div><div class="company-tags"><span class="company-tag">Smart City Optical</span><span class="company-tag">Rail</span><span class="company-tag">Industrial IoT</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">🌀</div><div><div class="company-name">Infinera Japan</div><div class="company-meta">Direct Ciena competitor — optical transport, DWDM, ICE6 coherent. Japan carrier partnerships. Vendor-side PM profiles = most transferable to Ciena-type roles. Small Japan footprint but high-value talent.</div><div class="company-tags"><span class="company-tag">DWDM</span><span class="company-tag">Coherent Optical</span><span class="company-tag">Ciena Peer</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">🔗</div><div><div class="company-name">Adtran Optical (ex-ADVA Japan)</div><div class="company-meta">Known profile: <strong>Stephan Schäfer</strong> (Optical PM, ex-ADVA Japan). Optical access + metro transport. PM talent highly transferable to Ciena-like roles. Post-merger integrating into Adtran portfolio.</div><div class="company-tags"><span class="company-tag">Metro Optical</span><span class="company-tag">Access</span><span class="company-tag">Known Profile</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">🔴</div><div><div class="company-name">Toshiba (Optical / Infra)</div><div class="company-meta">Toshiba Energy Systems optical infra units. <strong>Ronald G.</strong> (PM, $52K) in our pool. Optical systems + quantum cryptography optical R&D. Infrastructure delivery PM roles.</div><div class="company-tags"><span class="company-tag">Optical Infra</span><span class="company-tag">Quantum Optical</span><span class="company-tag">1 in Pool</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">📶</div><div><div class="company-name">ZTE Japan</div><div class="company-meta">Optical transport + access network portfolio. Japan presence through NTT and SoftBank carrier partnerships. Secondary talent pool — treat as complement to Nokia/Cisco/Infinera sourcing.</div><div class="company-tags"><span class="company-tag">Optical Transport</span><span class="company-tag">Access Network</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">📱</div><div><div class="company-name">Ribbon Communications <span style="font-size:10px;background:#fffbeb;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px;">3 in pool</span></div><div class="company-meta">3 candidates in LinkedIn pool · Tokyo. Optical and IP networking vendor for carrier-grade solutions. Optical/IP convergence PM roles — strong adjacent profile to Ciena optical PM.</div><div class="company-tags"><span class="company-tag">Optical/IP</span><span class="company-tag">Carrier Grade</span><span class="company-tag">3 Candidates</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#eff4ff;">📡</div><div><div class="company-name">Huawei Japan</div><div class="company-meta">Optical transport (OSN series) + submarine cable. Japanese-speaking PM talent. Treat as secondary target due to regulatory considerations. High domain expertise in optical transport PMs.</div><div class="company-tags"><span class="company-tag">Optical Transport</span><span class="company-tag">Submarine</span><span class="company-tag">⚠ Restricted</span></div></div></div>
+  </div>
+
+  <!-- TIER 3 -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+    <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;color:#5b21b6;text-transform:uppercase;letter-spacing:0.8px;">🟣 Tier 3 — Fiber & Optical Infrastructure</div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);">Deep domain fiber expertise · Japan's manufacturing backbone</div>
+  </div>
+  <div class="company-grid" style="margin-bottom:28px;">
+    <div class="company-card"><div class="company-logo" style="background:#f5f3ff;">🔌</div><div><div class="company-name">Sumitomo Electric Industries <span style="font-size:10px;background:#fffbeb;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px;">2 in pool</span></div><div class="company-meta">World's largest optical fiber manufacturer. <strong>Motoki Kakui</strong> (PM, $63K, contacted) + <strong>Wataru Katsurashima</strong> (Sr Asst GM, $85K). Deep domain expertise in fiber deployment programs.</div><div class="company-tags"><span class="company-tag">Optical Fiber</span><span class="company-tag">Submarine Cable</span><span class="company-tag">2 in Pool</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#f5f3ff;">⚡</div><div><div class="company-name">Furukawa Electric</div><div class="company-meta">Major optical fiber cable + network equipment manufacturer. Strong R&D in optical amplifiers, WDM components, and cables. PM talent with deep optical manufacturing + deployment background.</div><div class="company-tags"><span class="company-tag">Optical Fiber Cable</span><span class="company-tag">WDM Components</span><span class="company-tag">R&D</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#f5f3ff;">🌊</div><div><div class="company-name">Fujikura Ltd.</div><div class="company-meta">Optical fiber, fusion splicers, and cable systems. Optical connectors for subsea cables. Strong program management for fiber deployment and submarine projects. Key vendor to NTT.</div><div class="company-tags"><span class="company-tag">Fusion Splicers</span><span class="company-tag">Subsea Cable</span><span class="company-tag">Connectors</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#f5f3ff;">🏭</div><div><div class="company-name">Sumitomo Electric Optifrontier</div><div class="company-meta">Sumitomo's optical fusion splicer + testing division. Specialized PM roles for optical test product deployment and fiber network rollout programs across Japan and APAC.</div><div class="company-tags"><span class="company-tag">Fusion Splicers</span><span class="company-tag">Optical Testing</span><span class="company-tag">Field Deploy</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#f5f3ff;">🔗</div><div><div class="company-name">SWCC Showa Holdings</div><div class="company-meta">Submarine optical cable manufacturer (Sumitomo + Hitachi JV heritage). PM roles for undersea and terrestrial optical cable system projects. Niche but deep expertise.</div><div class="company-tags"><span class="company-tag">Submarine Optical</span><span class="company-tag">Cable Systems</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#f5f3ff;">🏗</div><div><div class="company-name">Alaxala Networks (NEC + Hitachi JV)</div><div class="company-meta">Network switch and router vendor for optical Ethernet. Japan carrier ecosystem with PM roles for optical LAN / enterprise network infrastructure deployments.</div><div class="company-tags"><span class="company-tag">NEC+Hitachi JV</span><span class="company-tag">Optical Ethernet</span><span class="company-tag">Carrier</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#f5f3ff;">🔌</div><div><div class="company-name">Colt Technology Services <span style="font-size:10px;background:#fffbeb;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px;">4 in pool</span></div><div class="company-meta"><strong>Hidekazu Hamajima</strong> ($94K, Very High flight risk) + <strong>Sap Anil Khatik</strong> (DC & Infra PM) in our pool. Fiber/optical operator with strong Tokyo presence. Both Very High risk = prime outreach targets.</div><div class="company-tags"><span class="company-tag">Fiber Operator</span><span class="company-tag">4 Candidates</span><span class="company-tag">High Flight Risk</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#f5f3ff;">🔬</div><div><div class="company-name">Advantest R&D <span style="font-size:10px;background:#dcfce7;color:#065f46;padding:2px 6px;border-radius:4px;margin-left:4px;">⭐ Only Direct Optical PM Title</span></div><div class="company-meta"><strong>Hidenobu Matsumura</strong> = "PM, Optical Test System Development" · 33 YOE · $59K · UNCONTACTED. Only direct optical PM title in uncontacted pool. Semiconductor test instruments with optical systems programs.</div><div class="company-tags"><span class="company-tag">Optical Test PM ⭐</span><span class="company-tag">Semiconductor</span><span class="company-tag">UNCONTACTED</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#f5f3ff;">📡</div><div><div class="company-name">Denki Kogyo / FiberTech Japan</div><div class="company-meta">CATV, fiber optic system design and installation. Maintenance management for optical telecom infra. PM roles for smaller-scale but highly technical fiber deployments. Tokyo and regional.</div><div class="company-tags"><span class="company-tag">CATV Fiber</span><span class="company-tag">Install & Maintenance</span><span class="company-tag">Regional</span></div></div></div>
+  </div>
+
+  <!-- TIER 4 -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.8px;">🟡 Tier 4 — Photonics / Optical Components</div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);">Program & R&D PMs · Japan's global photonics leadership · ~10%</div>
+  </div>
+  <div class="company-grid" style="margin-bottom:28px;">
+    <div class="company-card"><div class="company-logo" style="background:#fffbeb;">🔬</div><div><div class="company-name">Hamamatsu Photonics <span style="font-size:10px;background:#fffbeb;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px;">1 in pool</span></div><div class="company-meta"><strong>Kazuue Fujita</strong> (PM Team Lead, $81.5K) in our pool. World leader in optical sensors, detectors, and photonics devices. PM roles for photonics product development programs. Hamamatsu (Shizuoka) based.</div><div class="company-tags"><span class="company-tag">Photonics Devices</span><span class="company-tag">Optical Sensors</span><span class="company-tag">1 in Pool</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fffbeb;">📷</div><div><div class="company-name">Canon Inc.</div><div class="company-meta">Optical systems PM roles in semiconductor lithography (NSRM), medical imaging, and network cameras. Deep optical engineering heritage. Tokyo/Ota-ku based talent.</div><div class="company-tags"><span class="company-tag">Optical Systems</span><span class="company-tag">Lithography</span><span class="company-tag">Imaging</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fffbeb;">🔭</div><div><div class="company-name">Nikon Corporation</div><div class="company-meta">Precision optics PM roles in semiconductor (lithography), industrial metrology, and FPD exposure systems. Japan's optical precision engineering leader. Shinagawa based.</div><div class="company-tags"><span class="company-tag">Precision Optics</span><span class="company-tag">Lithography</span><span class="company-tag">Metrology</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fffbeb;">💎</div><div><div class="company-name">HOYA Corporation</div><div class="company-meta">Optical glass, photomask, and optical components. PM roles for glass substrate and optical component development programs. Major APAC telecom optical component supplier.</div><div class="company-tags"><span class="company-tag">Optical Glass</span><span class="company-tag">Photomask</span><span class="company-tag">Components</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fffbeb;">🔆</div><div><div class="company-name">Nichia Corporation</div><div class="company-meta">World's largest LED maker. Optical semiconductor PM roles for blue/UV LED programs used in optical fiber communications. Tokushima-based — non-Tokyo talent pool (regional access).</div><div class="company-tags"><span class="company-tag">LED / Laser Optical</span><span class="company-tag">Semiconductor</span><span class="company-tag">Tokushima</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fffbeb;">🏺</div><div><div class="company-name">Kyocera (Optical Division)</div><div class="company-meta">Optical communication components and laser modules. PM roles for precision optical component programs. Ceramic + optical integration expertise unique to Japan.</div><div class="company-tags"><span class="company-tag">Optical Modules</span><span class="company-tag">Laser</span><span class="company-tag">Ceramics</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fffbeb;">🖨</div><div><div class="company-name">Seiko Epson</div><div class="company-meta">Optical products: projectors, industrial robotics vision, and precision optics. PM roles in optical systems product delivery. Suwa, Nagano based — remote candidate opportunity.</div><div class="company-tags"><span class="company-tag">Optical Projectors</span><span class="company-tag">Vision Systems</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fffbeb;">🔶</div><div><div class="company-name">Sharp Corporation</div><div class="company-meta">Optical devices including optical pickups and photo couplers. PM roles for optical device development programs. Osaka-based talent pool — accessible from our Osaka candidates.</div><div class="company-tags"><span class="company-tag">Optical Devices</span><span class="company-tag">Photo Couplers</span><span class="company-tag">Osaka</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fffbeb;">🔮</div><div><div class="company-name">Nippon Electric Glass</div><div class="company-meta">Optical glass and fiber materials manufacturer (optical materials for telecom fiber). PM roles for specialty glass product programs supplying the Japanese fiber optic industry.</div><div class="company-tags"><span class="company-tag">Optical Glass</span><span class="company-tag">Fiber Materials</span><span class="company-tag">Telecom Supply</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fffbeb;">⚡</div><div><div class="company-name">Fuji Electric</div><div class="company-meta">Power electronics + optical sensor systems. PM roles for industrial optical measurement and energy-telecom convergence projects. Adjacent optical domain.</div><div class="company-tags"><span class="company-tag">Optical Sensors</span><span class="company-tag">Power + Optical</span><span class="company-tag">Industrial</span></div></div></div>
+  </div>
+
+  <!-- TIER 5 -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.8px;">🔴 Tier 5 — Niche Optical / Subsea / Advanced</div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);">Specialist hidden talent · high domain value · lower PM density</div>
+  </div>
+  <div class="company-grid" style="margin-bottom:28px;">
+    <div class="company-card"><div class="company-logo" style="background:#fef2f2;">💎</div><div><div class="company-name">Coherent Corp Japan (ex-II-VI)</div><div class="company-meta">Laser + optical component manufacturer. PM roles for high-power laser and optical transceiver programs. Ciena uses Coherent components — extremely relevant domain knowledge transfer.</div><div class="company-tags"><span class="company-tag">Laser</span><span class="company-tag">Optical Transceivers</span><span class="company-tag">Ciena Supplier</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fef2f2;">💡</div><div><div class="company-name">Lumentum Japan <span style="font-size:10px;background:#dcfce7;color:#065f46;padding:2px 6px;border-radius:4px;margin-left:4px;">⭐ Ciena Supplier</span></div><div class="company-meta">ROADM components, pump lasers, and transponders. <strong>Ciena's component supplier</strong> — PM talent has direct Ciena ecosystem exposure. PM roles for optical component product development. Very high profile relevance.</div><div class="company-tags"><span class="company-tag">ROADM</span><span class="company-tag">Pump Lasers</span><span class="company-tag">⭐ Ciena Supplier</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fef2f2;">🌊</div><div><div class="company-name">Kohoku Kogyo</div><div class="company-meta">Submarine optical cable components and connectors. Highly specialized — PM roles for submarine cable system programs. Rare but extremely deep domain expertise in subsea optical.</div><div class="company-tags"><span class="company-tag">Submarine Optical</span><span class="company-tag">Connectors</span><span class="company-tag">Specialist</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fef2f2;">🔬</div><div><div class="company-name">Optoquest Co. Ltd.</div><div class="company-meta">Photonics engineering company. Optical component design and manufacturing. Small team = PM roles are cross-functional. Very specialized DWDM-adjacent component expertise.</div><div class="company-tags"><span class="company-tag">Photonics Engineering</span><span class="company-tag">DWDM Components</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fef2f2;">🔗</div><div><div class="company-name">Senko Advanced Components</div><div class="company-meta">Optical fiber connectors and adapters for data center, telecom, and medical optical systems. PM roles for connector product development and system deployment programs.</div><div class="company-tags"><span class="company-tag">Optical Connectors</span><span class="company-tag">Data Center</span><span class="company-tag">Medical</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fef2f2;">🧬</div><div><div class="company-name">FiberLabs Inc.</div><div class="company-meta">Optical fiber amplifiers (EDFA) and specialty fiber products. PM roles for amplifier development and optical testing product programs. EDFA expertise directly relevant to Ciena long-haul systems.</div><div class="company-tags"><span class="company-tag">EDFA Amplifiers</span><span class="company-tag">Specialty Fiber</span><span class="company-tag">Long-Haul</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fef2f2;">⚙️</div><div><div class="company-name">Hirose Electric</div><div class="company-meta">Optical + electronic connectors for telecom equipment. PM roles for connector product development targeting optical network equipment manufacturers. Strong global supply relationships.</div><div class="company-tags"><span class="company-tag">Optical Connectors</span><span class="company-tag">Telecom Components</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fef2f2;">🔁</div><div><div class="company-name">Orbray (ex-Adamant Namiki)</div><div class="company-meta">Fiber optic components — ferrules and lens arrays for DWDM and optical switching systems. Hidden talent pool of engineers who manage optical product programs. Rare Ciena-adjacent expertise.</div><div class="company-tags"><span class="company-tag">Ferrules</span><span class="company-tag">Lens Arrays</span><span class="company-tag">DWDM</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fef2f2;">🛩</div><div><div class="company-name">Japan Aviation Electronics (JAE)</div><div class="company-meta">Military-grade fiber optic connectors + aerospace optical systems. PM roles in defense and aerospace optical programs. High expertise but low mobility — longer outreach cycle.</div><div class="company-tags"><span class="company-tag">Military Fiber</span><span class="company-tag">Aerospace</span><span class="company-tag">Defense</span></div></div></div>
+    <div class="company-card"><div class="company-logo" style="background:#fef2f2;">🌟</div><div><div class="company-name">Hakusan Inc.</div><div class="company-meta">Optical measurement and testing equipment. PM roles for optical test instrument product development and field deployment. Niche talent with hands-on optical PM experience in Japan field.</div><div class="company-tags"><span class="company-tag">Optical Measurement</span><span class="company-tag">Test Equipment</span></div></div></div>
+  </div>
+
+  <!-- Strategy Summary -->
+  <div class="divider"></div>
+  <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;">🎯 Recommended Sourcing Strategy by Tier</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid #059669;">
+      <div style="font-size:12px;font-weight:700;color:#065f46;margin-bottom:6px;">✅ TIER 1 + 2 — Focus 80% of effort here</div>
+      <div style="font-size:12px;color:var(--text-dim);">NTT ecosystem · Nokia · Cisco · NEC · Fujitsu (1FINITY). Highest Ciena-adjacent talent. Best conversion. Target titles: "Optical PM", "Transport PM", "DWDM Program Manager", "Optical Deployment Lead".</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid #2563eb;">
+      <div style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:6px;">🔵 TIER 3 — Focus 15% of effort</div>
+      <div style="font-size:12px;color:var(--text-dim);">Sumitomo · Furukawa · Fujikura · Colt. Deep fiber domain expertise. Titles: "Fiber Rollout PM", "Network Infra PM". Language barrier more common. Longer recruitment cycle but high loyalty post-hire.</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid #d97706;">
+      <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:6px;">🟡 TIER 4+5 — 5% · Specialist roles only</div>
+      <div style="font-size:12px;color:var(--text-dim);">Hamamatsu · Lumentum · Coherent · FiberLabs. Best when role needs deep photonics / component knowledge. Rare profiles — high value when found. Lumentum = Ciena supplier, highest domain transfer.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CANDIDATES ===================== -->
+<div id="tab-candidates" class="section">
+  <div class="section-header">
+    <h2>Talent Pool — Full Candidate Directory</h2>
+    <p>79 candidates profiled via Revelio with compensation and risk data. Use filters to narrow by location, flight risk, outreach status, or search by name/company.</p>
+  </div>
+
+  <div class="filter-bar">
+    <span class="filter-label">🔍 Filters</span>
+    <input type="text" class="search-input" placeholder="Search name, company, title..." id="tSearch" oninput="doFilter()">
+    <select class="filter-select" id="fStatus" onchange="doFilter()">
+      <option value="">All Statuses</option>
+      <option value="uncontacted">Uncontacted</option>
+      <option value="contacted">Contacted</option>
+      <option value="replied">Replied</option>
+    </select>
+    <select class="filter-select" id="fFlight" onchange="doFilter()">
+      <option value="">All Flight Risks</option>
+      <option value="Very High">Very High Risk</option>
+      <option value="High">High Risk</option>
+      <option value="Medium">Medium Risk</option>
+      <option value="Low">Low Risk</option>
+      <option value="Very Low">Very Low Risk</option>
+    </select>
+    <select class="filter-select" id="fLocation" onchange="doFilter()">
+      <option value="">All Locations</option>
+      <option value="Tokyo">Tokyo</option>
+      <option value="Non-Metro">Japan Non-Metro</option>
+      <option value="Nagoya">Nagoya</option>
+      <option value="Osaka">Osaka</option>
+    </select>
+    <select class="filter-select" id="fRemote" onchange="doFilter()">
+      <option value="">All Remote Scores</option>
+      <option value="Very High">Very High Remote</option>
+      <option value="Medium">Medium Remote</option>
+      <option value="High">High Remote</option>
+    </select>
+    <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
+    <span class="filter-count" id="fCount">79 results</span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="srtCol(0)">Name ↕</th>
+          <th onclick="srtCol(1)">Title ↕</th>
+          <th onclick="srtCol(2)">Company ↕</th>
+          <th onclick="srtCol(3)">Location ↕</th>
+          <th onclick="srtCol(4)">Total Comp ↕</th>
+          <th onclick="srtCol(5)">Base Salary ↕</th>
+          <th onclick="srtCol(6)">YOE ↕</th>
+          <th onclick="srtCol(7)">Degree</th>
+          <th onclick="srtCol(8)">Flight Risk ↕</th>
+          <th onclick="srtCol(9)">Remote ↕</th>
+          <th onclick="srtCol(10)">Prestige</th>
+          <th onclick="srtCol(11)">Status ↕</th>
+          <th>LinkedIn</th>
+        </tr>
+      </thead>
+      <tbody id="tBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===================== INSIGHTS ===================== -->
+<div id="tab-insights" class="section">
+  <div class="section-header">
+    <h2>Key Strategic Insights for Leadership</h2>
+    <p>Synthesized intelligence across talent data, job market trends, salary benchmarks, and pipeline health. Actionable takeaways for hiring strategy.</p>
+  </div>
+
+  <div class="trend-callout danger">
+    <span>🚨</span>
+    <span><strong>Critical Signal:</strong> Time-to-fill is at 182 days (March 2026), advertised salaries have nearly doubled in 8 months, and active job postings are falling. This market combination indicates a <strong>severe talent shortage</strong> — the few available candidates command premium compensation and take 6+ months to place.</span>
+  </div>
+
+  <div class="insight-grid">
+    <div class="insight-card danger">
+      <div class="insight-icon">⏱</div>
+      <div class="insight-stat">182 days</div>
+      <div class="insight-title">Roles Are Critically Hard to Fill</div>
+      <div class="insight-body">Current time-to-fill of 182 days (6+ months) is near the all-time high of 189 days. With only 1 active posting in the market, competition for the rare available candidate is intense. Proactive headhunting from existing employers is essential — reactive posting won't work.</div>
+    </div>
+    <div class="insight-card warn">
+      <div class="insight-icon">📈</div>
+      <div class="insight-stat">+98% in 8 months</div>
+      <div class="insight-title">Salary Expectations Have Nearly Doubled</div>
+      <div class="insight-body">Advertised salary surged from $49.4K (Jul 2025) to $97.8K (Mar 2026). Our Revelio talent pool averages $72K — already below the current market rate. Any offer below $80K will be uncompetitive. Budget recalibration is urgent before outreach continues.</div>
+    </div>
+    <div class="insight-card highlight">
+      <div class="insight-icon">✈️</div>
+      <div class="insight-stat">57%</div>
+      <div class="insight-title">Majority of Pool Has High Flight Risk</div>
+      <div class="insight-body">45 of 79 (57%) show High or Very High flight risk — the best condition for successful headhunting. This cohort is actively open to new roles. Prioritize outreach to the 157 uncontacted High-risk profiles before competitors do.</div>
+    </div>
+    <div class="insight-card good">
+      <div class="insight-icon">🌐</div>
+      <div class="insight-stat">59%</div>
+      <div class="insight-title">Remote-Ready Pool Expands Hiring Options</div>
+      <div class="insight-body">47 candidates rated Very High for remote suitability. This allows hiring from Japan Non-Metro (20 candidates), Osaka, and Nagoya — reducing direct competition with Tokyo-based employers like Rakuten, AWS, and Nokia for the same local pool.</div>
+    </div>
+    <div class="insight-card warn">
+      <div class="insight-icon">📍</div>
+      <div class="insight-stat">62%</div>
+      <div class="insight-title">Talent Heavily Concentrated in Tokyo</div>
+      <div class="insight-body">49 of 79 profiled candidates are in Tokyo, Japan — directly competing with Rakuten Mobile (8 talent claims), AWS (5), Nokia (5), NEC (4), and Colt (4) in the same geography. Differentiation through comp, culture, or flexibility is critical for Tokyo-based roles.</div>
+    </div>
+    <div class="insight-card good">
+      <div class="insight-icon">🎯</div>
+      <div class="insight-stat">157</div>
+      <div class="insight-title">Massive Untapped Outreach Opportunity</div>
+      <div class="insight-body">Of 192 LinkedIn profiles, 157 remain uncontacted. Given the high flight risk in this pool and current market salary, a structured outreach campaign targeting High/Very High risk, remote-suitable candidates could significantly improve pipeline conversion before Q3 2026.</div>
+    </div>
+    <div class="insight-card highlight">
+      <div class="insight-icon">🔭</div>
+      <div class="insight-stat">Optical-Specific</div>
+      <div class="insight-title">Only 2 Directly Optical-Titled Candidates</div>
+      <div class="insight-body">Only Ha Ngo (Cisco, "Optical Specialist," $84.8K, <strong>uncontacted</strong>) and Hidenobu Matsumura (Advantest, "PM Optical Test Systems," $59K, <strong>uncontacted</strong>) carry explicit optical titles. Both should be top priorities for first outreach. Broader PM pool requires role-specific screening.</div>
+    </div>
+    <div class="insight-card highlight">
+      <div class="insight-icon">⭐</div>
+      <div class="insight-stat">1 Replied</div>
+      <div class="insight-title">Tetsuya Kuramochi — Advance Immediately</div>
+      <div class="insight-body"><strong>Turner & Townsend</strong> · Sr. PM · 18 YOE · $90.6K total comp · Low flight risk · Very High remote. He has replied to outreach — the only candidate in active dialogue. Move to interview stage immediately before engagement cools.</div>
+    </div>
+    <div class="insight-card danger">
+      <div class="insight-icon">⚠️</div>
+      <div class="insight-stat">89% Male</div>
+      <div class="insight-title">Significant Gender Diversity Gap</div>
+      <div class="insight-body">Only 9 of 79 profiled candidates are female (11%). Female optical PMs identified include Ha Ngo (Cisco), Yuki Hayashida (Rapyuta), Fia Retnawati (Rakuten), Ashtyn Wargo, Rendy Bahri, Kanako Minakuchi, Tina Yang, and Hidekazu Hamajima. A targeted DEI outreach track is recommended.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:16px;">📋 Recommended Immediate Actions</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;box-shadow:var(--shadow);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:24px;height:24px;background:#2563eb;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:700;">1</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">Fast-track Tetsuya Kuramochi</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);">Only replied candidate. Turner & Townsend PM, $90.6K, Low risk. Schedule interview <strong>this week</strong>.</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;box-shadow:var(--shadow);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:24px;height:24px;background:#059669;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:700;">2</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">Contact Ha Ngo & Matsumura</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);">Only two optical-specific titles in pool. Both uncontacted. Cisco + Advantest. Reach out <strong>this week</strong>.</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;box-shadow:var(--shadow);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:24px;height:24px;background:#d97706;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:700;">3</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">Revise Salary Budget to $80K+</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);">Market rate hit $97.8K in March 2026. Any offer below $80K will fail. Reopen comp framework immediately.</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;box-shadow:var(--shadow);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:24px;height:24px;background:#7c3aed;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:700;">4</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">Launch Bulk Outreach to 157 Uncontacted</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);">Filter: High flight risk + Very High remote. Target 40–50 personalized messages in Q2 2026.</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;box-shadow:var(--shadow);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:24px;height:24px;background:#0891b2;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:700;">5</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">Expand to Non-Metro Candidates</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);">20 candidates in Japan Non-Metro face less competition. Leverage remote suitability for wider talent access.</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;box-shadow:var(--shadow);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:24px;height:24px;background:#dc2626;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:700;">6</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">Plan for 6-Month Fill Timeline</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);">Time-to-fill is at 182 days. Set realistic hiring expectations and prioritize early pipeline building for H2 2026 needs.</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  TALENT INTELLIGENCE REPORT · OPTICAL PROJECT MANAGERS · JAPAN · LEADERSHIP DECK · SOURCES: LINKEDIN + REVELIO + JOB MARKET DATA
+</div>
+
+<script>
+// ===== DATE =====
+document.getElementById('rDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+// ===== TAB NAVIGATION =====
+function goTab(id, el) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'overview') initMap();
+}
+setTimeout(initMap, 300);
+
+// ===== DATA =====
+const TALENT = [{"name":"Matthias Frey","title":"Project Researcher, Sony CSL","company":"Sony Group Corp.","location":"Tokyo, Japan","salary_base":41412,"salary_total":50074,"yoe":30,"degree":"N/A","flight_risk":"Medium","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/mfrey","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Bernard Estacio","title":"ID Network Deployment - Project Lead II","company":"Amazon Web Services, Inc.","location":"Tokyo, Japan","salary_base":40270,"salary_total":47202,"yoe":11,"degree":"Bachelor","flight_risk":"Medium","remote":"Medium","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/bernard-paul-estacio-a2022096","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Yusuke Shimazu","title":"Project Manager","company":"NEC Corp.","location":"Tokyo, Japan","salary_base":73410,"salary_total":77076,"yoe":22,"degree":"Bachelor","flight_risk":"High","remote":"Very High","prestige":"Medium","gender":"Male","linkedin":"linkedin.com/in/yusuke-shimazu-b0474b1b3","status":"contacted","lat":35.6642,"lng":139.6886},{"name":"Hirohito Satake","title":"Project Manager","company":"NEC Networks & System Integration Corp.","location":"Japan Non-Metro","salary_base":76294,"salary_total":80359,"yoe":22,"degree":"N/A","flight_risk":"High","remote":"High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/hirohito-satake-3896471a6","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Gustavo Hatakeyama","title":"Structural Analyst - Project Manager","company":"CEMEF Engenharia","location":"Sao Jose Dos Campos, Brazil","salary_base":10184,"salary_total":11014,"yoe":15,"degree":"Bachelor","flight_risk":"Very High","remote":"High","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/gustavo-hatakeyama-35bab463","status":"contacted","lat":35.6642,"lng":139.6886},{"name":"Sieu Lay","title":"Project Manager","company":"Valeo SE","location":"Tokyo, Japan","salary_base":83573,"salary_total":89845,"yoe":12,"degree":"Bachelor","flight_risk":"High","remote":"Very High","prestige":"Low","gender":"Male","linkedin":"linkedin.com/in/sieu-lay","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Yijie Sun","title":"Project Manager","company":"Decaida (Shanghai) Investment","location":"Tokyo, Japan","salary_base":63804,"salary_total":71545,"yoe":18,"degree":"Master","flight_risk":"High","remote":"Very High","prestige":"Low","gender":"Male","linkedin":"linkedin.com/in/yijie-sun-3b7676158","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Yozo Nakayama","title":"Sr. Manager, Platform Engineering Lab","company":"Advanced Micro Devices, Inc.","location":"Japan Non-Metro","salary_base":88197,"salary_total":98847,"yoe":43,"degree":"N/A","flight_risk":"Very High","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/yozo-nakayama-b5b2566","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"William Creech","title":"Project Manager","company":"RUBICON TECHNICAL SERVICES JAPAN","location":"Nagoya, Japan","salary_base":33764,"salary_total":36285,"yoe":22,"degree":"Bachelor","flight_risk":"Medium","remote":"Very High","prestige":"Medium","gender":"Male","linkedin":"linkedin.com/in/william-creech-976bb870","status":"uncontacted","lat":35.1621,"lng":137.0038},{"name":"Tsubasa Endo","title":"Project Researcher","company":"University of Tokyo","location":"Tokyo, Japan","salary_base":44989,"salary_total":48169,"yoe":2,"degree":"Doctor","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/tsubasa-endo-021015194","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Ha Ngo","title":"Solution Engineers - Optical Specialist","company":"Cisco Systems, Inc.","location":"Tokyo, Japan","salary_base":65306,"salary_total":84819,"yoe":10,"degree":"Master","flight_risk":"Medium","remote":"Medium","prestige":"Very High","gender":"Female","linkedin":"linkedin.com/in/ha-anh-ngo-66a8a3190","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Teppei Hirose","title":"Project Manager","company":"DENSO Corp.","location":"Japan Non-Metro","salary_base":76144,"salary_total":82383,"yoe":21,"degree":"N/A","flight_risk":"Low","remote":"Very High","prestige":"Medium","gender":"Male","linkedin":"linkedin.com/in/teppei-hirose-71701745","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Jeevan Koneru","title":"Project Management Consultant","company":"L&T Technology Services","location":"Japan Non-Metro","salary_base":49695,"salary_total":54076,"yoe":15,"degree":"Bachelor","flight_risk":"Medium","remote":"Very High","prestige":"Low","gender":"Male","linkedin":"linkedin.com/in/jeevan-koneru-8b3028172","status":"uncontacted","lat":35.1621,"lng":137.0038},{"name":"Toshiyuki Kaji","title":"Software Engineer Project Lead","company":"Honda R&D Co.","location":"Tokyo, Japan","salary_base":61228,"salary_total":65410,"yoe":12,"degree":"Master","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/toshiyuki-kaji","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Vaidya Bharadwaj","title":"TEL India Project","company":"Tokyo Electron AT Ltd.","location":"Tokyo, Japan","salary_base":27832,"salary_total":40742,"yoe":32,"degree":"MBA","flight_risk":"High","remote":"Medium","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/vaidyanb","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Jinkwan Kwoen","title":"Associate Professor (Project)","company":"University of Tokyo","location":"Japan Non-Metro","salary_base":61244,"salary_total":61244,"yoe":10,"degree":"Bachelor","flight_risk":"High","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/jinkwan-kwoen-20114695","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Yasumasa Shina","title":"Sales & Marketing - Project Management","company":"FUJIFILM Electronic Materials","location":"Tokyo, Japan","salary_base":24167,"salary_total":28514,"yoe":21,"degree":"N/A","flight_risk":"Very High","remote":"Medium","prestige":"Very High","gender":"Female","linkedin":"linkedin.com/in/yasumasa-shina-46b18a19a","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Tetsuya Kuramochi","title":"Sr Project Manager","company":"Turner & Townsend Ltd.","location":"Tokyo, Japan","salary_base":81108,"salary_total":90603,"yoe":18,"degree":"N/A","flight_risk":"Low","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/tetsuya-kuramochi-86a452b","status":"replied","lat":35.6642,"lng":139.6886},{"name":"Yasumitsu Tamoto","title":"CTO, Japan Region","company":"Kudan, Inc.","location":"Tokyo, Japan","salary_base":116250,"salary_total":393839,"yoe":18,"degree":"Master","flight_risk":"Low","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/yasumitsu-tamoto-b8024258","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Hidekazu Hamajima","title":"IT Project Manager","company":"Colt Technology Services","location":"Tokyo, Japan","salary_base":88953,"salary_total":94306,"yoe":37,"degree":"Bachelor","flight_risk":"Very High","remote":"Very High","prestige":"Very High","gender":"Female","linkedin":"linkedin.com/in/hidekazu-hamajima-a0907410","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Sahan","title":"Project Manager","company":"Microsoft Corp.","location":"Osaka, Japan","salary_base":94689,"salary_total":103625,"yoe":13,"degree":"Master","flight_risk":"Very Low","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/shashika-s","status":"uncontacted","lat":34.668,"lng":135.6318},{"name":"Juei Igarashi","title":"REFLEX Program Manager","company":"Astroscale Holdings","location":"Tokyo, Japan","salary_base":83855,"salary_total":132046,"yoe":29,"degree":"Doctor","flight_risk":"High","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/juei-igarashi-42941814","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Koichi Harada","title":"Project Manager Execution","company":"Sidel SpA","location":"Tokyo, Japan","salary_base":61047,"salary_total":75120,"yoe":31,"degree":"Master","flight_risk":"Medium","remote":"Very High","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/koichi-harada-54833534","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Yuta Suzuki","title":"Project Manager","company":"DENSO Corp.","location":"Tokyo, Japan","salary_base":70812,"salary_total":76620,"yoe":17,"degree":"Doctor","flight_risk":"Low","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/yuta-suzuki-98483929","status":"contacted","lat":35.6642,"lng":139.6886},{"name":"Masayuki Yamazaki","title":"AI Research Engineer & PM","company":"Toyota Motor Corp.","location":"Tokyo, Japan","salary_base":66939,"salary_total":75131,"yoe":23,"degree":"N/A","flight_risk":"High","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/masayuki-yamazaki-825508143","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Rahul Shirke","title":"Senior Project Manager","company":"STCS","location":"Mumbai, India","salary_base":31612,"salary_total":34010,"yoe":23,"degree":"Bachelor","flight_risk":"Very High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/rahul-h-shirke","status":"contacted","lat":35.6642,"lng":139.6886},{"name":"Malala Ojiambo","title":"Project Manager","company":"GreenPowerMonitor","location":"Tokyo, Japan","salary_base":55955,"salary_total":59714,"yoe":13,"degree":"Doctor","flight_risk":"Medium","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/malalaojiambo","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Voltaire Balisnomo","title":"Project Manager","company":"Ericsson","location":"Tokyo, Japan","salary_base":87357,"salary_total":105467,"yoe":26,"degree":"Master","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/voltaire-bajo-balisnomo-42b230a","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Hirofumi Sumi","title":"Project Researcher","company":"University of Tokyo","location":"Tokyo, Japan","salary_base":46710,"salary_total":49512,"yoe":40,"degree":"N/A","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/hirofumi-sumi-phd-7b6a645","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Shumon M.","title":"Project Leader, Mobility Business Strategy","company":"Panasonic Holdings","location":"Tokyo, Japan","salary_base":65514,"salary_total":83510,"yoe":17,"degree":"Bachelor","flight_risk":"Very High","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/shumonmori","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Akio Yasuhara","title":"Lead Project Engineer","company":"UL LLC","location":"Japan Non-Metro","salary_base":38539,"salary_total":50841,"yoe":20,"degree":"N/A","flight_risk":"Very High","remote":"Medium","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/akio-yasuhara-55127988","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Sap Anil Khatik","title":"Delivery Manager DC & Infra Project","company":"Colt Technology Services","location":"Tokyo, Japan","salary_base":39864,"salary_total":52132,"yoe":19,"degree":"Master","flight_risk":"High","remote":"Medium","prestige":"Medium","gender":"Male","linkedin":"linkedin.com/in/anil-khatik","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"John Loving","title":"Board Member","company":"AVA Japan","location":"Tokyo, Japan","salary_base":86268,"salary_total":111848,"yoe":15,"degree":"N/A","flight_risk":"Medium","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/john-loving-85105697","status":"contacted","lat":35.6642,"lng":139.6886},{"name":"Masataka Machida","title":"Project Management Office","company":"RICOH Company","location":"Japan Non-Metro","salary_base":47907,"salary_total":53351,"yoe":32,"degree":"N/A","flight_risk":"Very High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/masataka-machida-9b172a128","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Aaron Burrows","title":"Project Manager","company":"Copper River Information Technology","location":"Japan Non-Metro","salary_base":76127,"salary_total":81071,"yoe":28,"degree":"N/A","flight_risk":"Medium","remote":"Very High","prestige":"Medium","gender":"Male","linkedin":"linkedin.com/in/aaron-burrows-28b81052","status":"contacted","lat":35.3689,"lng":135.9261},{"name":"Florian Lemoniez","title":"Technical Infrastructure Project Engineer","company":"Amazon Web Services","location":"Tokyo, Japan","salary_base":75120,"salary_total":83983,"yoe":20,"degree":"Associate","flight_risk":"High","remote":"Medium","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/florian-lemoniez","status":"contacted","lat":35.6642,"lng":139.6886},{"name":"Masaki Yamanaka","title":"Japanese Language AI Project","company":"Outlier AI, Inc.","location":"Japan Non-Metro","salary_base":28068,"salary_total":32230,"yoe":20,"degree":"Bachelor","flight_risk":"Very High","remote":"Medium","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/masaki-yamanaka-48a885137","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Yunhui Wu","title":"Project Researcher","company":"University of Tokyo","location":"Tokyo, Japan","salary_base":45210,"salary_total":48112,"yoe":6,"degree":"Doctor","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/yunhui-wu-74502886","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Iliyan Yankov","title":"Project Manager","company":"ABB Ltd.","location":"Cambridge, United Kingdom","salary_base":110471,"salary_total":120964,"yoe":31,"degree":"Master","flight_risk":"Low","remote":"Very High","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/iliyan-yankov-76935a19","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Kenji Nishimoto","title":"Project Academic Specialist","company":"Tokyo University","location":"Japan Non-Metro","salary_base":35978,"salary_total":38426,"yoe":37,"degree":"N/A","flight_risk":"Low","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/kenji-nishimoto-298055132","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Feng Liu","title":"Senior Project Manager","company":"Boehringer Ingelheim","location":"Tokyo, Japan","salary_base":105601,"salary_total":121986,"yoe":20,"degree":"Master","flight_risk":"Low","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/feng-liu-a2a64933","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Tetsuya Iitsuka","title":"Project Manager","company":"SoftBank Corp.","location":"Tokyo, Japan","salary_base":61970,"salary_total":68846,"yoe":37,"degree":"Bachelor","flight_risk":"High","remote":"Very High","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/tetsuya-iitsuka-pmp-493856b1","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Hidenobu Matsumura","title":"PM, Optical Test System Development","company":"Advantest R&D","location":"Japan Non-Metro","salary_base":55173,"salary_total":59205,"yoe":33,"degree":"N/A","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/hidenobu-matsumura-60496028","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Ryota Kimura","title":"Project Manager","company":"DENSO Corp.","location":"Japan Non-Metro","salary_base":65503,"salary_total":71628,"yoe":22,"degree":"Master","flight_risk":"Medium","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/ryota-kimura-037640148","status":"uncontacted","lat":34.668,"lng":135.6318},{"name":"Rajkumar Modak","title":"Project Assistant Professor","company":"University of Tokyo","location":"Tokyo, Japan","salary_base":57611,"salary_total":60431,"yoe":6,"degree":"Doctor","flight_risk":"Medium","remote":"Very High","prestige":"Medium","gender":"Male","linkedin":"linkedin.com/in/rajkumar-modak-a962a68a","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Naoyuki Yoshizumi","title":"Project Manager - CCS","company":"Mitsubishi Heavy Industries","location":"Tokyo, Japan","salary_base":72833,"salary_total":87683,"yoe":26,"degree":"N/A","flight_risk":"Medium","remote":"Medium","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/naoyuki-yoshizumi-9714b47a","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Tomoharu Nakazato","title":"Project Researcher","company":"University of Tokyo","location":"Tokyo, Japan","salary_base":45984,"salary_total":48552,"yoe":18,"degree":"N/A","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/tomoharu-nakazato-89493613a","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Wataru Katsurashima","title":"Sr. Asst. GM, Power Cable Project","company":"Sumitomo Electric Industries","location":"Japan Non-Metro","salary_base":68274,"salary_total":85118,"yoe":38,"degree":"N/A","flight_risk":"Very High","remote":"Medium","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/wataru-katsurashima-49500660","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Atsushi Hasegawa","title":"Project Academic Specialist, UTokyo","company":"University of Tokyo","location":"Tokyo, Japan","salary_base":28130,"salary_total":28130,"yoe":46,"degree":"Bachelor","flight_risk":"Very High","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/atsushi-hasegawa-84284739","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Osamu Nakao","title":"Project Management Office","company":"Hitachi Ltd.","location":"Tokyo, Japan","salary_base":64528,"salary_total":71007,"yoe":6,"degree":"Bachelor","flight_risk":"High","remote":"Very High","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/osamu-nakao-495215144","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Mahija Manoharan","title":"Project Manager","company":"Valeo SE","location":"Tokyo, Japan","salary_base":75830,"salary_total":82092,"yoe":13,"degree":"N/A","flight_risk":"Very Low","remote":"Very High","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/mahija-manoharan-26a3b192","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Sam Hui","title":"AI Project Lead","company":"Techno Smile Co.","location":"Nagoya, Japan","salary_base":57562,"salary_total":62390,"yoe":2,"degree":"Master","flight_risk":"Very Low","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/sam-hui-b99a06133","status":"uncontacted","lat":35.1621,"lng":137.0038},{"name":"Fia Retnawati","title":"Asst. Manager Project Facilitation","company":"Rakuten Payment, Inc.","location":"Tokyo, Japan","salary_base":50113,"salary_total":68135,"yoe":15,"degree":"Master","flight_risk":"Low","remote":"Medium","prestige":"Very High","gender":"Female","linkedin":"linkedin.com/in/fiaretnawati","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Motoki Kakui","title":"Project Manager","company":"Sumitomo Electric Industries","location":"Tokyo, Japan","salary_base":56409,"salary_total":63015,"yoe":34,"degree":"Master","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/motoki-kakui-33399658","status":"contacted","lat":35.6642,"lng":139.6886},{"name":"Harumitsu Ikeda","title":"Project Leader","company":"VAIO Corp.","location":"Japan Non-Metro","salary_base":43248,"salary_total":48513,"yoe":26,"degree":"N/A","flight_risk":"Very High","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/harumitsu-ikeda-0b931290","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Shohei Tsutsumi","title":"Sales Director","company":"Preferred Networks Japan","location":"Japan Non-Metro","salary_base":125882,"salary_total":195390,"yoe":27,"degree":"N/A","flight_risk":"Very Low","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/shohei-tsutsumi","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Nikhil Nair","title":"Project Manager","company":"Chiyoda Corp.","location":"Tokyo, Japan","salary_base":83541,"salary_total":91676,"yoe":21,"degree":"Bachelor","flight_risk":"Very High","remote":"Very High","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/nikhil-nair8599267","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Mark Horikoshi","title":"Project Manager","company":"American Engineering Corp.","location":"Tokyo, Japan","salary_base":65457,"salary_total":75103,"yoe":7,"degree":"N/A","flight_risk":"High","remote":"Very High","prestige":"Low","gender":"Male","linkedin":"linkedin.com/in/mark-horikoshi-a62a48230","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Cong Nguyen","title":"Researcher","company":"Daido Steel Co.","location":"Japan Non-Metro","salary_base":49083,"salary_total":49083,"yoe":18,"degree":"Doctor","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/cong-nguyen-116203120","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Nobuyuki Suzuki","title":"Project Manager","company":"Dimension Data Holdings","location":"Tokyo, Japan","salary_base":85847,"salary_total":91574,"yoe":23,"degree":"N/A","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/nobuyuki-suzuki","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Rendy Bahri","title":"Project Engineering Manager","company":"Baseload Power Japan","location":"Tokyo, Japan","salary_base":41576,"salary_total":44844,"yoe":11,"degree":"Master","flight_risk":"Low","remote":"Very High","prestige":"High","gender":"Female","linkedin":"linkedin.com/in/rendy-bahri-b23697b2","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Yuki Hayashida","title":"Project Manager","company":"Rapyuta Robotics","location":"Tokyo, Japan","salary_base":70477,"salary_total":74887,"yoe":9,"degree":"Master","flight_risk":"Medium","remote":"Very High","prestige":"High","gender":"Female","linkedin":"linkedin.com/in/yuki-hayashida-8b75721a2","status":"contacted","lat":35.6642,"lng":139.6886},{"name":"Yukio Takemoto","title":"Project Associate Professor","company":"Osaka University","location":"Osaka, Japan","salary_base":36422,"salary_total":37749,"yoe":29,"degree":"Doctor","flight_risk":"Low","remote":"Medium","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/yukio-takemoto-abq","status":"uncontacted","lat":34.668,"lng":135.6318},{"name":"Ronald G","title":"Project Manager","company":"Toshiba Energy Systems","location":"Tokyo, Japan","salary_base":48177,"salary_total":52429,"yoe":14,"degree":"Bachelor","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/rt17","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Ali Kai","title":"Project Manager","company":"Rakuten Mobile","location":"Tokyo, Japan","salary_base":69250,"salary_total":73833,"yoe":11,"degree":"Bachelor","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/alikai","status":"contacted","lat":35.3689,"lng":135.9261},{"name":"Manisone S.","title":"Technical Project Coordinator","company":"L'Oréal SA","location":"Tokyo, Japan","salary_base":71098,"salary_total":76023,"yoe":21,"degree":"Master","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/manisone-sihalath","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Jefferson Vestal","title":"Project Manager","company":"American Engineering Corp.","location":"Japan Non-Metro","salary_base":77103,"salary_total":83337,"yoe":16,"degree":"N/A","flight_risk":"Medium","remote":"Very High","prestige":"Low","gender":"Male","linkedin":"linkedin.com/in/jefferson-vestal-a101b5291","status":"contacted","lat":35.6642,"lng":139.6886},{"name":"Sze Set","title":"Technical Advisor","company":"MOL Solutions Inc.","location":"Tokyo, Japan","salary_base":48794,"salary_total":52439,"yoe":27,"degree":"Doctor","flight_risk":"Low","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/sze-set","status":"contacted","lat":35.6642,"lng":139.6886},{"name":"Prashastha Prahlad","title":"Project Management Specialist","company":"Amkor Technology Japan","location":"Japan Non-Metro","salary_base":53550,"salary_total":56351,"yoe":8,"degree":"Master","flight_risk":"Low","remote":"Very High","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/prashastha-prahlad-19872915b","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Ashtyn Wargo","title":"Project Manager / Process Manager","company":"Puget Sound Naval Shipyard","location":"Tokyo, Japan","salary_base":75143,"salary_total":79772,"yoe":15,"degree":"Bachelor","flight_risk":"Low","remote":"Very High","prestige":"High","gender":"Female","linkedin":"linkedin.com/in/ashtyn-wargo","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Kazuue Fujita","title":"Project Manager Team Lead","company":"Hamamatsu Corp.","location":"Japan Non-Metro","salary_base":73052,"salary_total":81537,"yoe":20,"degree":"Doctor","flight_risk":"High","remote":"Very High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/kazuue-fujita-ph-d-10bb4080","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Kenji Yoshimoto","title":"Project Associate Professor","company":"Kyoto University","location":"Japan Non-Metro","salary_base":49531,"salary_total":51325,"yoe":18,"degree":"Doctor","flight_risk":"High","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/kenji-yoshimoto-4974966","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Kenta Katakata","title":"Section Manager","company":"Sony Group Corp.","location":"Tokyo, Japan","salary_base":64161,"salary_total":70276,"yoe":15,"degree":"Master","flight_risk":"Very Low","remote":"Low","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/kenta-katakata","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Eugene Yang","title":"Senior PM - Semiconductor Division","company":"Fujitsu Ltd.","location":"Tokyo, Japan","salary_base":29173,"salary_total":44515,"yoe":17,"degree":"Master","flight_risk":"Medium","remote":"Medium","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/eugene-yang-6aa741343","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Stefan S.","title":"Quality / Project Management","company":"SICK AG","location":"Tokyo, Japan","salary_base":47944,"salary_total":53090,"yoe":17,"degree":"N/A","flight_risk":"High","remote":"Medium","prestige":"High","gender":"Male","linkedin":"linkedin.com/in/stefan-s-9a386a117","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Kanako Minakuchi","title":"Project Coordinator & Office Manager","company":"Samtec, Inc.","location":"Tokyo, Japan","salary_base":28210,"salary_total":34518,"yoe":25,"degree":"N/A","flight_risk":"Very High","remote":"Medium","prestige":"Very High","gender":"Female","linkedin":"linkedin.com/in/kanako-minakuchi-35bba66","status":"uncontacted","lat":35.3689,"lng":135.9261},{"name":"Kyuzo Matsumoto","title":"Project Supervisor","company":"Pfizer Inc.","location":"Tokyo, Japan","salary_base":61947,"salary_total":67740,"yoe":5,"degree":"Master","flight_risk":"High","remote":"High","prestige":"Very High","gender":"Male","linkedin":"linkedin.com/in/kyuzo-matsumoto","status":"uncontacted","lat":35.6642,"lng":139.6886},{"name":"Tina Yang","title":"Project Engineer","company":"Magdalene Telecom Ltd.","location":"Liverpool, United Kingdom","salary_base":52810,"salary_total":55136,"yoe":32,"degree":"MBA","flight_risk":"Medium","remote":"Very High","prestige":"Very High","gender":"Female","linkedin":"linkedin.com/in/tina-yang-0178a5114","status":"uncontacted","lat":35.6642,"lng":139.6886}];
+
+// ===== CHART DEFAULTS =====
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#8a96a8';
+Chart.defaults.borderColor = '#e2e6ed';
+
+const gridCfg = { color: '#f0f2f5' };
+const axTick = { color: '#8a96a8' };
+
+// ===== MAP =====
+let mapInit = false;
+function initMap() {
+  if (mapInit) return;
+  mapInit = true;
+  const map = L.map('talentMap', { center: [36.5, 137.0], zoom: 6 });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 18 }).addTo(map);
+  const colors = { uncontacted: '#94a3b8', contacted: '#f59e0b', replied: '#059669' };
+  TALENT.forEach(t => {
+    if (!t.lat || !t.lng) return;
+    const c = colors[t.status];
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:11px;height:11px;border-radius:50%;background:${c};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>`,
+      iconSize:[11,11], iconAnchor:[5.5,5.5]
+    });
+    const jit = v => v + (Math.random()-.5)*.1;
+    L.marker([jit(t.lat), jit(t.lng)], {icon}).bindPopup(`
+      <div style="min-width:200px">
+        <div class="popup-name">${t.name}</div>
+        <div class="popup-row"><b>Title:</b> ${t.title}</div>
+        <div class="popup-row"><b>Company:</b> ${t.company}</div>
+        <div class="popup-row"><b>Location:</b> ${t.location}</div>
+        <div class="popup-row popup-sal"><b>Total Comp:</b> $${t.salary_total.toLocaleString()}</div>
+        <div class="popup-row"><b>YOE:</b> ${t.yoe} yrs &nbsp;|&nbsp; <b>Flight Risk:</b> ${t.flight_risk}</div>
+        <div class="popup-row"><b>Status:</b> <span style="color:${c};font-weight:600;">${t.status.toUpperCase()}</span></div>
+      </div>
+    `).addTo(map);
+  });
+}
+
+// ===== OVERVIEW CHARTS =====
+new Chart(document.getElementById('locChart'), {
+  type:'doughnut',
+  data:{ labels:['Tokyo','Japan Non-Metro','Nagoya','Osaka','Other'], datasets:[{ data:[49,20,2,2,6], backgroundColor:['#2563eb','#7c3aed','#059669','#d97706','#64748b'], borderWidth:2, borderColor:'#fff' }] },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ padding:12, boxWidth:12, color:'#4a5568' } } }, cutout:'62%' }
+});
+new Chart(document.getElementById('expChart'), {
+  type:'bar',
+  data:{ labels:['0–5yr','5–10yr','10–15yr','15–20yr','20–30yr','30+yr'], datasets:[{ data:[3,8,15,18,21,14], backgroundColor:'#7c3aed', borderRadius:5 }] },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{grid:gridCfg,ticks:axTick}, x:{grid:{display:false},ticks:axTick} } }
+});
+new Chart(document.getElementById('flightChart'), {
+  type:'bar',
+  data:{ labels:['Very High','High','Medium','Low','Very Low'], datasets:[{ data:[15,30,16,13,5], backgroundColor:['#dc2626','#f97316','#fbbf24','#059669','#2563eb'], borderRadius:5 }] },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{grid:gridCfg,ticks:axTick}, x:{grid:{display:false},ticks:axTick} } }
+});
+new Chart(document.getElementById('remoteChart'), {
+  type:'doughnut',
+  data:{ labels:['Very High (47)','Medium (28)','High (3)','Low (1)'], datasets:[{ data:[47,28,3,1], backgroundColor:['#059669','#d97706','#2563eb','#dc2626'], borderWidth:2, borderColor:'#fff' }] },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ padding:12, boxWidth:12, color:'#4a5568' } } }, cutout:'62%' }
+});
+
+// ===== HIRING DEMAND CHARTS =====
+const POS = [{"Date":"2024-01-14","Active":5,"New":4,"Removed":3},{"Date":"2024-01-21","Active":4,"New":0,"Removed":1},{"Date":"2024-01-28","Active":4,"New":0,"Removed":0},{"Date":"2024-02-04","Active":6,"New":2,"Removed":0},{"Date":"2024-02-11","Active":6,"New":0,"Removed":0},{"Date":"2024-02-18","Active":7,"New":1,"Removed":0},{"Date":"2024-02-25","Active":6,"New":0,"Removed":1},{"Date":"2024-03-03","Active":6,"New":0,"Removed":0},{"Date":"2024-03-10","Active":6,"New":1,"Removed":1},{"Date":"2024-03-17","Active":6,"New":0,"Removed":0},{"Date":"2024-03-24","Active":6,"New":3,"Removed":3},{"Date":"2024-03-31","Active":5,"New":4,"Removed":5},{"Date":"2024-04-07","Active":7,"New":4,"Removed":2},{"Date":"2024-04-14","Active":4,"New":1,"Removed":4},{"Date":"2024-04-21","Active":7,"New":5,"Removed":2},{"Date":"2024-04-28","Active":7,"New":0,"Removed":0},{"Date":"2024-05-05","Active":7,"New":0,"Removed":0},{"Date":"2024-05-12","Active":6,"New":0,"Removed":1},{"Date":"2024-05-19","Active":6,"New":0,"Removed":0},{"Date":"2024-05-26","Active":8,"New":2,"Removed":0},{"Date":"2024-06-02","Active":8,"New":0,"Removed":0},{"Date":"2024-06-09","Active":9,"New":1,"Removed":0},{"Date":"2024-06-16","Active":9,"New":0,"Removed":0},{"Date":"2024-06-23","Active":9,"New":0,"Removed":0},{"Date":"2024-06-30","Active":9,"New":0,"Removed":0},{"Date":"2024-07-07","Active":9,"New":0,"Removed":0},{"Date":"2024-07-14","Active":9,"New":0,"Removed":0},{"Date":"2024-07-21","Active":9,"New":1,"Removed":1},{"Date":"2024-07-28","Active":9,"New":0,"Removed":0},{"Date":"2024-08-04","Active":8,"New":0,"Removed":1},{"Date":"2024-08-11","Active":8,"New":0,"Removed":0},{"Date":"2024-08-18","Active":8,"New":0,"Removed":0},{"Date":"2024-08-25","Active":8,"New":0,"Removed":0},{"Date":"2024-09-01","Active":7,"New":0,"Removed":1},{"Date":"2024-09-08","Active":8,"New":1,"Removed":0},{"Date":"2024-09-15","Active":8,"New":0,"Removed":0},{"Date":"2024-09-22","Active":8,"New":0,"Removed":0},{"Date":"2024-09-29","Active":6,"New":0,"Removed":2},{"Date":"2024-10-06","Active":10,"New":4,"Removed":0},{"Date":"2024-10-13","Active":10,"New":0,"Removed":0},{"Date":"2024-10-20","Active":8,"New":0,"Removed":2},{"Date":"2024-10-27","Active":9,"New":3,"Removed":2},{"Date":"2024-11-03","Active":8,"New":0,"Removed":1},{"Date":"2024-11-10","Active":7,"New":0,"Removed":1},{"Date":"2024-11-17","Active":7,"New":0,"Removed":0},{"Date":"2024-11-24","Active":6,"New":0,"Removed":1},{"Date":"2024-12-01","Active":5,"New":1,"Removed":2},{"Date":"2024-12-08","Active":5,"New":0,"Removed":0},{"Date":"2024-12-15","Active":6,"New":1,"Removed":0},{"Date":"2024-12-22","Active":5,"New":0,"Removed":1},{"Date":"2024-12-29","Active":6,"New":1,"Removed":0},{"Date":"2025-01-05","Active":5,"New":0,"Removed":1},{"Date":"2025-01-12","Active":5,"New":0,"Removed":0},{"Date":"2025-01-19","Active":6,"New":1,"Removed":0},{"Date":"2025-01-26","Active":4,"New":0,"Removed":2},{"Date":"2025-02-02","Active":4,"New":0,"Removed":0},{"Date":"2025-02-09","Active":4,"New":1,"Removed":1},{"Date":"2025-02-16","Active":5,"New":1,"Removed":0},{"Date":"2025-02-23","Active":5,"New":1,"Removed":1},{"Date":"2025-03-02","Active":5,"New":0,"Removed":0},{"Date":"2025-03-09","Active":5,"New":0,"Removed":0},{"Date":"2025-03-16","Active":6,"New":2,"Removed":1},{"Date":"2025-03-23","Active":6,"New":0,"Removed":0},{"Date":"2025-03-30","Active":7,"New":2,"Removed":1},{"Date":"2025-04-06","Active":5,"New":0,"Removed":2},{"Date":"2025-04-13","Active":6,"New":1,"Removed":0},{"Date":"2025-04-20","Active":7,"New":1,"Removed":0},{"Date":"2025-04-27","Active":5,"New":0,"Removed":2},{"Date":"2025-05-04","Active":5,"New":0,"Removed":0},{"Date":"2025-05-11","Active":8,"New":3,"Removed":0},{"Date":"2025-05-18","Active":7,"New":0,"Removed":1},{"Date":"2025-05-25","Active":7,"New":0,"Removed":0},{"Date":"2025-06-01","Active":9,"New":2,"Removed":0},{"Date":"2025-06-08","Active":10,"New":1,"Removed":0},{"Date":"2025-06-15","Active":9,"New":0,"Removed":1},{"Date":"2025-06-22","Active":8,"New":0,"Removed":1},{"Date":"2025-06-29","Active":8,"New":0,"Removed":0},{"Date":"2025-07-06","Active":7,"New":0,"Removed":1},{"Date":"2025-07-13","Active":7,"New":0,"Removed":0},{"Date":"2025-07-20","Active":6,"New":0,"Removed":1},{"Date":"2025-07-27","Active":6,"New":0,"Removed":0},{"Date":"2025-08-03","Active":5,"New":0,"Removed":1},{"Date":"2025-08-10","Active":5,"New":0,"Removed":0},{"Date":"2025-08-17","Active":5,"New":0,"Removed":0},{"Date":"2025-08-24","Active":5,"New":0,"Removed":0},{"Date":"2025-08-31","Active":5,"New":0,"Removed":0},{"Date":"2025-09-07","Active":7,"New":2,"Removed":0},{"Date":"2025-09-14","Active":6,"New":0,"Removed":1},{"Date":"2025-09-21","Active":6,"New":0,"Removed":0},{"Date":"2025-09-28","Active":6,"New":0,"Removed":0},{"Date":"2025-10-05","Active":6,"New":0,"Removed":0},{"Date":"2025-10-12","Active":5,"New":0,"Removed":1},{"Date":"2025-10-19","Active":4,"New":0,"Removed":1},{"Date":"2025-10-26","Active":4,"New":0,"Removed":0},{"Date":"2025-11-02","Active":4,"New":0,"Removed":0},{"Date":"2025-11-09","Active":3,"New":1,"Removed":2},{"Date":"2025-11-16","Active":3,"New":0,"Removed":0},{"Date":"2025-11-23","Active":3,"New":0,"Removed":0},{"Date":"2025-11-30","Active":3,"New":0,"Removed":0},{"Date":"2025-12-07","Active":3,"New":0,"Removed":0},{"Date":"2025-12-14","Active":3,"New":0,"Removed":0},{"Date":"2025-12-21","Active":3,"New":0,"Removed":0},{"Date":"2025-12-28","Active":3,"New":0,"Removed":0},{"Date":"2026-01-04","Active":4,"New":1,"Removed":0},{"Date":"2026-01-11","Active":3,"New":0,"Removed":1},{"Date":"2026-01-18","Active":2,"New":0,"Removed":1},{"Date":"2026-01-25","Active":2,"New":0,"Removed":0},{"Date":"2026-02-01","Active":3,"New":1,"Removed":0},{"Date":"2026-02-08","Active":3,"New":0,"Removed":0},{"Date":"2026-02-15","Active":3,"New":1,"Removed":1},{"Date":"2026-02-22","Active":3,"New":1,"Removed":1},{"Date":"2026-03-01","Active":2,"New":0,"Removed":1},{"Date":"2026-03-08","Active":1,"New":0,"Removed":1},{"Date":"2026-03-15","Active":1,"New":0,"Removed":0}];
+const TTF = [{"Date":"2024-01-14","v":30.3},{"Date":"2024-01-21","v":7},{"Date":"2024-01-28","v":7},{"Date":"2024-02-04","v":7},{"Date":"2024-02-11","v":7},{"Date":"2024-02-18","v":7},{"Date":"2024-02-25","v":119},{"Date":"2024-03-03","v":119},{"Date":"2024-03-10","v":56},{"Date":"2024-03-17","v":56},{"Date":"2024-03-24","v":44.3},{"Date":"2024-03-31","v":28},{"Date":"2024-04-07","v":7},{"Date":"2024-04-14","v":8.75},{"Date":"2024-04-21","v":10.5},{"Date":"2024-04-28","v":10.5},{"Date":"2024-05-05","v":10.5},{"Date":"2024-05-12","v":42},{"Date":"2024-05-19","v":42},{"Date":"2024-05-26","v":42},{"Date":"2024-06-02","v":42},{"Date":"2024-06-09","v":42},{"Date":"2024-06-16","v":42},{"Date":"2024-06-23","v":42},{"Date":"2024-06-30","v":42},{"Date":"2024-07-07","v":42},{"Date":"2024-07-14","v":42},{"Date":"2024-07-21","v":42},{"Date":"2024-07-28","v":42},{"Date":"2024-08-04","v":182},{"Date":"2024-08-11","v":182},{"Date":"2024-08-18","v":182},{"Date":"2024-08-25","v":182},{"Date":"2024-09-01","v":42},{"Date":"2024-09-08","v":42},{"Date":"2024-09-15","v":42},{"Date":"2024-09-22","v":42},{"Date":"2024-09-29","v":143.5},{"Date":"2024-10-06","v":143.5},{"Date":"2024-10-13","v":143.5},{"Date":"2024-10-20","v":182},{"Date":"2024-10-27","v":189},{"Date":"2024-11-03","v":56},{"Date":"2024-11-10","v":14},{"Date":"2024-11-17","v":14},{"Date":"2024-11-24","v":182},{"Date":"2024-12-01","v":35},{"Date":"2024-12-08","v":35},{"Date":"2024-12-15","v":35},{"Date":"2024-12-22","v":77},{"Date":"2024-12-29","v":77},{"Date":"2025-01-05","v":35},{"Date":"2025-01-12","v":35},{"Date":"2025-01-19","v":35},{"Date":"2025-01-26","v":77},{"Date":"2025-02-02","v":77},{"Date":"2025-02-09","v":126},{"Date":"2025-02-16","v":126},{"Date":"2025-02-23","v":14},{"Date":"2025-03-02","v":14},{"Date":"2025-03-09","v":14},{"Date":"2025-03-16","v":56},{"Date":"2025-03-23","v":56},{"Date":"2025-03-30","v":91},{"Date":"2025-04-06","v":112},{"Date":"2025-04-13","v":112},{"Date":"2025-04-20","v":112},{"Date":"2025-04-27","v":56},{"Date":"2025-05-04","v":56},{"Date":"2025-05-11","v":56},{"Date":"2025-05-18","v":49},{"Date":"2025-05-25","v":49},{"Date":"2025-06-01","v":49},{"Date":"2025-06-08","v":49},{"Date":"2025-06-15","v":14},{"Date":"2025-06-22","v":84},{"Date":"2025-06-29","v":84},{"Date":"2025-07-06","v":35},{"Date":"2025-07-13","v":35},{"Date":"2025-07-20","v":42},{"Date":"2025-07-27","v":42},{"Date":"2025-08-03","v":84},{"Date":"2025-08-10","v":84},{"Date":"2025-08-17","v":84},{"Date":"2025-08-24","v":84},{"Date":"2025-08-31","v":84},{"Date":"2025-09-07","v":84},{"Date":"2025-09-14","v":182},{"Date":"2025-09-21","v":182},{"Date":"2025-09-28","v":182},{"Date":"2025-10-05","v":182},{"Date":"2025-10-12","v":182},{"Date":"2025-10-19","v":182},{"Date":"2025-10-26","v":182},{"Date":"2025-11-02","v":182},{"Date":"2025-11-09","v":182},{"Date":"2025-11-16","v":182},{"Date":"2025-11-23","v":182},{"Date":"2025-11-30","v":182},{"Date":"2025-12-07","v":182},{"Date":"2025-12-14","v":182},{"Date":"2025-12-21","v":182},{"Date":"2025-12-28","v":182},{"Date":"2026-01-04","v":182},{"Date":"2026-01-11","v":7},{"Date":"2026-01-18","v":133},{"Date":"2026-01-25","v":133},{"Date":"2026-02-01","v":133},{"Date":"2026-02-08","v":133},{"Date":"2026-02-15","v":98},{"Date":"2026-02-22","v":7},{"Date":"2026-03-01","v":7},{"Date":"2026-03-08","v":182},{"Date":"2026-03-15","v":182}];
+const SAL = [{"Date":"2024-01-14","v":63685},{"Date":"2024-01-21","v":56765},{"Date":"2024-01-28","v":56765},{"Date":"2024-02-04","v":55694},{"Date":"2024-02-11","v":55694},{"Date":"2024-02-18","v":55355},{"Date":"2024-02-25","v":55015},{"Date":"2024-03-03","v":55015},{"Date":"2024-03-10","v":55514},{"Date":"2024-03-17","v":55514},{"Date":"2024-03-24","v":54082},{"Date":"2024-03-31","v":53682},{"Date":"2024-04-07","v":53453},{"Date":"2024-04-14","v":53362},{"Date":"2024-04-21","v":54206},{"Date":"2024-04-28","v":54206},{"Date":"2024-05-05","v":54206},{"Date":"2024-05-12","v":54304},{"Date":"2024-05-19","v":54304},{"Date":"2024-05-26","v":54150},{"Date":"2024-06-02","v":54150},{"Date":"2024-06-09","v":53936},{"Date":"2024-06-16","v":53936},{"Date":"2024-06-23","v":53936},{"Date":"2024-06-30","v":53936},{"Date":"2024-07-07","v":53936},{"Date":"2024-07-14","v":53936},{"Date":"2024-07-21","v":54080},{"Date":"2024-07-28","v":54080},{"Date":"2024-08-04","v":54117},{"Date":"2024-08-11","v":54117},{"Date":"2024-08-18","v":54117},{"Date":"2024-08-25","v":54117},{"Date":"2024-09-01","v":54202},{"Date":"2024-09-08","v":54593},{"Date":"2024-09-15","v":54593},{"Date":"2024-09-22","v":54593},{"Date":"2024-09-29","v":54881},{"Date":"2024-10-06","v":53894},{"Date":"2024-10-13","v":53894},{"Date":"2024-10-20","v":53149},{"Date":"2024-10-27","v":52793},{"Date":"2024-11-03","v":52226},{"Date":"2024-11-10","v":52491},{"Date":"2024-11-17","v":52491},{"Date":"2024-11-24","v":52280},{"Date":"2024-12-01","v":52232},{"Date":"2024-12-08","v":52232},{"Date":"2024-12-15","v":52111},{"Date":"2024-12-22","v":52165},{"Date":"2024-12-29","v":52055},{"Date":"2025-01-05","v":52165},{"Date":"2025-01-12","v":52165},{"Date":"2025-01-19","v":51581},{"Date":"2025-01-26","v":51248},{"Date":"2025-02-02","v":51248},{"Date":"2025-02-09","v":57333},{"Date":"2025-02-16","v":56292},{"Date":"2025-02-23","v":51482},{"Date":"2025-03-02","v":51482},{"Date":"2025-03-09","v":51482},{"Date":"2025-03-16","v":52422},{"Date":"2025-03-23","v":52422},{"Date":"2025-03-30","v":52481},{"Date":"2025-04-06","v":52449},{"Date":"2025-04-13","v":52462},{"Date":"2025-04-20","v":52471},{"Date":"2025-04-27","v":52600},{"Date":"2025-05-04","v":52600},{"Date":"2025-05-11","v":52901},{"Date":"2025-05-18","v":53005},{"Date":"2025-05-25","v":53005},{"Date":"2025-06-01","v":52871},{"Date":"2025-06-08","v":50294},{"Date":"2025-06-15","v":50061},{"Date":"2025-06-22","v":49797},{"Date":"2025-06-29","v":49797},{"Date":"2025-07-06","v":49425},{"Date":"2025-07-13","v":49425},{"Date":"2025-07-20","v":53145},{"Date":"2025-07-27","v":53145},{"Date":"2025-08-03","v":52997},{"Date":"2025-08-10","v":52997},{"Date":"2025-08-17","v":52997},{"Date":"2025-08-24","v":52997},{"Date":"2025-08-31","v":52997},{"Date":"2025-09-07","v":65408},{"Date":"2025-09-14","v":67374},{"Date":"2025-09-21","v":67374},{"Date":"2025-09-28","v":67374},{"Date":"2025-10-05","v":67374},{"Date":"2025-10-12","v":70344},{"Date":"2025-10-19","v":74798},{"Date":"2025-10-26","v":74798},{"Date":"2025-11-02","v":74798},{"Date":"2025-11-09","v":70758},{"Date":"2025-11-16","v":70758},{"Date":"2025-11-23","v":70758},{"Date":"2025-11-30","v":70758},{"Date":"2025-12-07","v":70758},{"Date":"2025-12-14","v":70758},{"Date":"2025-12-21","v":70758},{"Date":"2025-12-28","v":70758},{"Date":"2026-01-04","v":76594},{"Date":"2026-01-11","v":70758},{"Date":"2026-01-18","v":55976},{"Date":"2026-01-25","v":55976},{"Date":"2026-02-01","v":69924},{"Date":"2026-02-08","v":69924},{"Date":"2026-02-15","v":85475},{"Date":"2026-02-22","v":85475},{"Date":"2026-03-01","v":95186},{"Date":"2026-03-08","v":97820},{"Date":"2026-03-15","v":97820}];
+
+// Active postings chart
+const posLabels = POS.map(d=>d.Date);
+new Chart(document.getElementById('activePostChart'),{
+  type:'line',
+  data:{ labels:posLabels, datasets:[{ label:'Active Postings', data:POS.map(d=>d.Active), borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,0.06)', fill:true, tension:0.3, pointRadius:0, borderWidth:2 }] },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ title:c=>c[0].label, label:c=>`Active: ${c.raw}` } } }, scales:{ y:{ grid:gridCfg, ticks:{...axTick, callback:v=>v+' jobs'}, beginAtZero:true }, x:{ grid:{display:false}, ticks:{...axTick, maxTicksLimit:12, maxRotation:30} } } }
+});
+// New postings
+new Chart(document.getElementById('newPostChart'),{
+  type:'bar',
+  data:{ labels:posLabels, datasets:[{ label:'New', data:POS.map(d=>d.New), backgroundColor:'rgba(5,150,105,0.7)', borderRadius:3 }] },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{grid:gridCfg,ticks:axTick,beginAtZero:true}, x:{grid:{display:false},ticks:{...axTick,maxTicksLimit:10,maxRotation:30}} } }
+});
+// TTF chart
+new Chart(document.getElementById('ttfChart'),{
+  type:'line',
+  data:{ labels:TTF.map(d=>d.Date), datasets:[{ data:TTF.map(d=>d.v), borderColor:'#dc2626', backgroundColor:'rgba(220,38,38,0.05)', fill:true, tension:0.2, pointRadius:0, borderWidth:2 }] },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{grid:gridCfg,ticks:{...axTick,callback:v=>v+'d'},beginAtZero:true,suggestedMax:200}, x:{grid:{display:false},ticks:{...axTick,maxTicksLimit:10,maxRotation:30}} } }
+});
+// Monthly grouped
+const months = {};
+POS.forEach(d => {
+  const ym = d.Date.slice(0,7);
+  if(!months[ym]) months[ym]={newP:0,removed:0};
+  months[ym].newP += d.New;
+  months[ym].removed += d.Removed;
+});
+const mKeys = Object.keys(months);
+new Chart(document.getElementById('monthlyPostChart'),{
+  type:'bar',
+  data:{ labels:mKeys, datasets:[
+    { label:'New Postings', data:mKeys.map(k=>months[k].newP), backgroundColor:'rgba(37,99,235,0.75)', borderRadius:4 },
+    { label:'Removed', data:mKeys.map(k=>-months[k].removed), backgroundColor:'rgba(220,38,38,0.6)', borderRadius:4 }
+  ]},
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top', labels:{color:'#4a5568',padding:12} } }, scales:{ y:{grid:gridCfg,ticks:{...axTick,callback:v=>Math.abs(v)},stacked:false}, x:{grid:{display:false},ticks:{...axTick,maxRotation:45}} } }
+});
+
+// ===== SALARY CHARTS =====
+new Chart(document.getElementById('salTrendChart'),{
+  type:'line',
+  data:{ labels:SAL.map(d=>d.Date), datasets:[
+    { data:SAL.map(d=>d.v), borderColor:'#059669', backgroundColor:'rgba(5,150,105,0.08)', fill:true, tension:0.3, pointRadius:0, borderWidth:2.5, label:'Advertised Salary' },
+    { data:SAL.map(()=>58326), borderColor:'#d97706', borderDash:[5,5], borderWidth:1.5, pointRadius:0, label:'Period Avg $58.3K', fill:false }
+  ]},
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'top',labels:{color:'#4a5568',padding:12}} }, scales:{ y:{grid:gridCfg,ticks:{...axTick,callback:v=>'$'+(v/1000).toFixed(0)+'K'},suggestedMin:40000}, x:{grid:{display:false},ticks:{...axTick,maxTicksLimit:14,maxRotation:30}} } }
+});
+// Quarterly
+const qtrs={};
+SAL.forEach(d=>{
+  const [y,m]=d.Date.split('-');
+  const q=Math.ceil(parseInt(m)/3);
+  const key=`Q${q}'${y.slice(2)}`;
+  if(!qtrs[key]){qtrs[key]=[];}
+  qtrs[key].push(d.v);
+});
+const qKeys=Object.keys(qtrs);
+const qAvgs=qKeys.map(k=>Math.round(qtrs[k].reduce((a,b)=>a+b,0)/qtrs[k].length));
+new Chart(document.getElementById('salQtrChart'),{
+  type:'bar',
+  data:{ labels:qKeys, datasets:[{ data:qAvgs, backgroundColor:qAvgs.map((v,i)=>i<4?'#2563eb':i<8?'#7c3aed':'#059669'), borderRadius:5, label:'Avg Salary' }] },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{grid:gridCfg,ticks:{...axTick,callback:v=>'$'+(v/1000).toFixed(0)+'K'},suggestedMin:40000}, x:{grid:{display:false},ticks:{...axTick,maxRotation:45}} } }
+});
+// Sal distribution
+new Chart(document.getElementById('salDistChart'),{
+  type:'bar',
+  data:{ labels:['<$30K','$30–50K','$50–70K','$70–90K','$90–150K','$150K+'], datasets:[{ data:[4,16,21,25,11,2], backgroundColor:['#64748b','#7c3aed','#2563eb','#059669','#d97706','#dc2626'], borderRadius:5 }] },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{grid:gridCfg,ticks:axTick,beginAtZero:true}, x:{grid:{display:false},ticks:axTick} } }
+});
+// Salary by company
+new Chart(document.getElementById('salCoChart'),{
+  type:'bar',
+  data:{
+    labels:['Kudan','Preferred Networks','Astroscale','Boehringer Ingelheim','ABB','AVA Japan','Ericsson','Microsoft','AMD','Chiyoda','Dimension Data','Turner & Townsend'],
+    datasets:[{ data:[393839,195390,132046,121986,120964,111848,105467,103625,98847,91676,91574,90603], backgroundColor:'rgba(37,99,235,0.8)', borderRadius:5 }]
+  },
+  options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}}, scales:{ x:{grid:gridCfg,ticks:{...axTick,callback:v=>'$'+(v/1000).toFixed(0)+'K'}}, y:{grid:{display:false},ticks:{...axTick,font:{size:10}}} } }
+});
+
+// ===== COMPANY CHARTS =====
+new Chart(document.getElementById('coLiChart'),{
+  type:'bar',
+  data:{
+    labels:['Rakuten Mobile','AWS','Nokia','NEC Corp','Colt Technology','Ribbon Comms','Univ. of Tokyo','DENSO','Rakuten Symphony','Woven by Toyota'],
+    datasets:[{data:[8,5,5,4,4,3,3,4,2,2],backgroundColor:'rgba(124,58,237,0.8)',borderRadius:5}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:gridCfg,ticks:axTick,beginAtZero:true},y:{grid:{display:false},ticks:{...axTick,font:{size:10}}}}}
+});
+new Chart(document.getElementById('coSalChart'),{
+  type:'bar',
+  data:{
+    labels:['Kudan','Preferred Networks','Astroscale','Boehringer','ABB','AVA Japan','Ericsson','Microsoft','Chiyoda','Turner & Townsend'],
+    datasets:[{data:[393839,195390,132046,121986,120964,111848,105467,103625,91676,90603],backgroundColor:'rgba(5,150,105,0.8)',borderRadius:5}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:gridCfg,ticks:{...axTick,callback:v=>'$'+(v/1000).toFixed(0)+'K'}},y:{grid:{display:false},ticks:{...axTick,font:{size:10}}}}}
+});
+
+// ===== TOP 50 COMPANIES =====
+const TOP50 = [
+  // Tier 1 - Telecom Operators
+  {rank:1,name:"NTT Group",tier:"1",meta:"Japan's largest telecom · IOWN 2.0 optical network · 192-core submarine cable",tags:["IOWN Optical","All-Photonics","Submarine"],pool:false},
+  {rank:2,name:"NTT Communications",tier:"1",meta:"Enterprise & global optical networking · transit & backbone PMs",tags:["Enterprise Optical","Backbone","PM Roles"],pool:false},
+  {rank:3,name:"NTT East",tier:"1",meta:"Fiber-to-home & optical access network deployment across eastern Japan",tags:["FTTH","Fiber Deployment","Access"],pool:false},
+  {rank:4,name:"NTT West",tier:"1",meta:"Fiber rollout & optical network PMs for western Japan region",tags:["Fiber Rollout","Regional","PM Roles"],pool:false},
+  {rank:5,name:"NTT Data",tier:"1",meta:"IT services & network project management · optical infra integration",tags:["IT Integration","PM Roles","Enterprise"],pool:false},
+  {rank:6,name:"KDDI",tier:"1",meta:"Au carrier · 5G backhaul · Starlink integration · IoT & optical infra",tags:["5G Backhaul","Optical Transport","IoT"],pool:false},
+  {rank:7,name:"SoftBank Corp.",tier:"1",meta:"5G SA buildout · Ericsson latency trials · optical & RAN PM roles",tags:["5G","Optical Backhaul","RAN"],pool:false},
+  {rank:8,name:"Rakuten Mobile",tier:"1",meta:"Open RAN pioneer · 9M+ subscribers · optical backhaul PM roles",tags:["Open RAN","Optical","5G"],pool:true},
+  {rank:9,name:"Rakuten Symphony",tier:"1",meta:"Global RAN software & deployment services arm of Rakuten",tags:["RAN Software","Deployment","Global"],pool:false},
+  {rank:10,name:"KDDI Research",tier:"1",meta:"R&D division · 6G / optical transport research program management",tags:["R&D","6G","Optical Research"],pool:false},
+  // Tier 2 - Optical Vendors
+  {rank:11,name:"NEC Corporation",tier:"2",meta:"Optical transport, 5G & IT infra PM roles · IOWN-adjacent projects",tags:["Optical Transport","5G","Gov Projects"],pool:true},
+  {rank:12,name:"Fujitsu",tier:"2",meta:"1FINITY optical platform · DWDM & optical PM roles · direct Ciena peer",tags:["1FINITY","DWDM","Optical PM"],pool:false},
+  {rank:13,name:"Mitsubishi Electric",tier:"2",meta:"Optical systems, satellite & infra PM roles · defense-grade optical",tags:["Optical Systems","Satellite","Infra PM"],pool:false},
+  {rank:14,name:"Hitachi",tier:"2",meta:"Social innovation · optical & telecom infra program management",tags:["Social Innovation","Telecom","Infra PM"],pool:true},
+  {rank:15,name:"Toshiba",tier:"2",meta:"Energy & optical systems · network infrastructure project management",tags:["Energy","Optical","Network Infra"],pool:true},
+  {rank:16,name:"Nokia Japan",tier:"2",meta:"RAN, routing & optical transport · SoftBank & Rakuten partner vendor",tags:["Optical Transport","RAN","Routing"],pool:false},
+  {rank:17,name:"Cisco Systems Japan",tier:"2",meta:"Optical specialist roles · enterprise & carrier routing PM talent",tags:["Optical Specialist","Routing","Enterprise"],pool:true},
+  {rank:18,name:"Infinera Japan",tier:"2",meta:"DWDM & ICE6 optical transport · carrier-grade PM talent pool",tags:["DWDM","ICE6","Carrier Optical"],pool:false},
+  {rank:19,name:"Adtran (ADVA) Japan",tier:"2",meta:"Optical transport & access PM roles · formerly ADVA Optical",tags:["Optical Access","Transport","PM Roles"],pool:false},
+  {rank:20,name:"Huawei Japan",tier:"2",meta:"Optical & 5G infra · restricted market presence but talent exists",tags:["Optical","5G","Restricted"],pool:false},
+  {rank:21,name:"ZTE Japan",tier:"2",meta:"Optical transport & telecom infra presence in Japan market",tags:["Optical","Telecom Infra","Transport"],pool:false},
+  // Tier 3 - Fiber & Optical Infrastructure
+  {rank:22,name:"Sumitomo Electric Industries",tier:"3",meta:"World's top optical fiber manufacturer · PM & deployment roles",tags:["Optical Fiber","Manufacturing","PM Roles"],pool:true},
+  {rank:23,name:"Furukawa Electric",tier:"3",meta:"Optical fiber & cable systems · infrastructure project management",tags:["Optical Cable","Fiber Systems","Infra"],pool:false},
+  {rank:24,name:"Fujikura Ltd.",tier:"3",meta:"mmWave + fiber optic cables · 5G backhaul deployment PMs",tags:["Fiber Optic","mmWave","5G Backhaul"],pool:false},
+  {rank:25,name:"SWCC Showa Holdings",tier:"3",meta:"Submarine & land optical cable · power cable PM talent",tags:["Submarine Cable","Optical","Power"],pool:false},
+  {rank:26,name:"Alaxala Networks",tier:"3",meta:"NEC + Hitachi JV · enterprise & carrier network switching PMs",tags:["Enterprise Network","Carrier","JV"],pool:false},
+  {rank:27,name:"Sumitomo Electric Optifrontier",tier:"3",meta:"Optical fusion splicers & connectors · fiber deployment equipment",tags:["Fusion Splicing","Connectors","Deployment"],pool:false},
+  {rank:28,name:"FiberTech Japan",tier:"3",meta:"Fiber deployment & optical infra rollout · regional coverage",tags:["Fiber Rollout","Optical Infra","Regional"],pool:false},
+  {rank:29,name:"Denki Kogyo",tier:"3",meta:"CATV, fiber & telecom infra · deployment & maintenance PM roles",tags:["CATV","Fiber","Telecom Infra"],pool:false},
+  {rank:30,name:"Ericsson Japan",tier:"3",meta:"5G RAN & optical backhaul · SoftBank latency trials · $105K avg comp",tags:["5G RAN","Optical Backhaul","SoftBank"],pool:true},
+  // Tier 4 - Photonics / Optical Components
+  {rank:31,name:"Hamamatsu Photonics",tier:"4",meta:"World-class photon detection & optical systems · R&D PM roles",tags:["Photonics","Optical Systems","R&D"],pool:true},
+  {rank:32,name:"Canon Inc.",tier:"4",meta:"Optical systems, imaging & industrial optics · program management",tags:["Optical Systems","Imaging","Industrial"],pool:false},
+  {rank:33,name:"Nikon Corporation",tier:"4",meta:"Precision optics & semiconductor lithography · optical PM talent",tags:["Precision Optics","Lithography","Semiconductor"],pool:false},
+  {rank:34,name:"HOYA Corporation",tier:"4",meta:"Optical glass, photomasks & medical optics · program management",tags:["Optical Glass","Photomask","Medical"],pool:false},
+  {rank:35,name:"Sharp Corporation",tier:"4",meta:"Optical devices, displays & components · hardware PM roles",tags:["Optical Devices","Displays","Components"],pool:false},
+  {rank:36,name:"Fuji Electric",tier:"4",meta:"Power electronics & optical sensor systems · industrial PM",tags:["Optical Sensors","Industrial","Power"],pool:false},
+  {rank:37,name:"Nichia Corporation",tier:"4",meta:"LED & laser diode pioneer · optical semiconductor PM roles",tags:["LED","Laser Diode","Semiconductor"],pool:false},
+  {rank:38,name:"Kyocera",tier:"4",meta:"Optical components & connectors division · telecom-grade optics",tags:["Optical Components","Connectors","Telecom"],pool:false},
+  {rank:39,name:"Seiko Epson",tier:"4",meta:"Optical sensors, projectors & precision optics · PM talent",tags:["Optical Sensors","Projectors","Precision"],pool:false},
+  {rank:40,name:"Advantest R&D",tier:"4",meta:"Optical test system development · direct match in our talent pool",tags:["Optical Test","Semiconductor","R&D"],pool:true},
+  // Tier 5 - Niche / Subsea / Advanced Components
+  {rank:41,name:"Coherent Corp. Japan",tier:"5",meta:"Optical transceivers, lasers & amplifiers · subsea & DWDM",tags:["Transceivers","Lasers","DWDM"],pool:false},
+  {rank:42,name:"Lumentum Japan",tier:"5",meta:"Optical components for telecom & 3D sensing · PM roles",tags:["Optical Components","3D Sensing","Telecom"],pool:false},
+  {rank:43,name:"Kohoku Kogyo",tier:"5",meta:"Submarine optical cable components · deep niche PM talent",tags:["Submarine Optics","Cable Components","Niche"],pool:false},
+  {rank:44,name:"Orbray",tier:"5",meta:"Advanced optical components & synthetic diamond optics",tags:["Advanced Optics","Diamond","Components"],pool:false},
+  {rank:45,name:"FiberLabs Inc.",tier:"5",meta:"Optical fiber amplifiers (EDFA/TDFA) · specialty fiber Japan",tags:["EDFA","Fiber Amplifiers","Specialty"],pool:false},
+  {rank:46,name:"Optoquest Co. Ltd.",tier:"5",meta:"Photonics engineering · optical measurement equipment Japan",tags:["Photonics","Measurement","Engineering"],pool:false},
+  {rank:47,name:"Senko Advanced Components",tier:"5",meta:"Optical connectors & fiber assemblies · telecom-grade hardware",tags:["Connectors","Fiber Assemblies","Telecom"],pool:false},
+  {rank:48,name:"Hirose Electric",tier:"5",meta:"High-speed optical & electrical connectors · precision assembly",tags:["Optical Connectors","High-Speed","Precision"],pool:false},
+  {rank:49,name:"Japan Aviation Electronics (JAE)",tier:"5",meta:"Optical & electronic connectors · aerospace & telecom grade",tags:["Optical Connectors","Aerospace","Telecom"],pool:false},
+  {rank:50,name:"Colt Technology Services",tier:"5",meta:"Fiber & optical network operator · 2 candidates in our pool",tags:["Fiber Network","Optical","Data Center"],pool:true}
+];
+
+const tierColors = {'1':'#dc2626','2':'#d97706','3':'#2563eb','4':'#059669','5':'#7c3aed'};
+const tierBg = {'1':'#fef2f2','2':'#fffbeb','3':'#eff4ff','4':'#ecfdf5','5':'#f5f3ff'};
+
+function renderCompanyTiles(tierFilter) {
+  const grid = document.getElementById('companyTilesGrid');
+  if (!grid) return;
+  const data = tierFilter === 'all' ? TOP50 : TOP50.filter(c => c.tier === tierFilter);
+  grid.innerHTML = data.map(c => `
+    <div class="co-tile${c.pool?' in-pool':''}">
+      ${c.pool ? '<div class="co-pool-badge">✓ In Pool</div>' : ''}
+      <div class="co-tile-header">
+        <div class="co-tile-rank" style="background:${tierColors[c.tier]}">${c.rank}</div>
+        <div class="co-tile-name">${c.name}</div>
+      </div>
+      <div class="co-tile-meta">${c.meta}</div>
+      <div class="co-tile-tags">
+        <span class="co-tile-tag" style="background:${tierBg[c.tier]};color:${tierColors[c.tier]};border-color:${tierColors[c.tier]}33">T${c.tier}</span>
+        ${c.tags.map(t=>`<span class="co-tile-tag">${t}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+renderCompanyTiles('all');
+
+function filterTier(tier, el) {
+  document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('tier-active'));
+  el.classList.add('tier-active');
+  renderCompanyTiles(tier);
+}
+
+// ===== TABLE =====
+function riskBadge(r){const m={'Very High':'b-vh','High':'b-h','Medium':'b-m','Low':'b-l','Very Low':'b-vl'};return`<span class="badge ${m[r]||''}">${r}</span>`;}
+function stBadge(s){return`<span class="badge b-${s}">${s}</span>`;}
+
+let filtData=[...TALENT], sortC=-1, sortD=1;
+function renderT(d){
+  document.getElementById('fCount').textContent=d.length+' results';
+  document.getElementById('tBody').innerHTML=d.map(t=>`<tr>
+    <td class="td-name">${t.name}</td>
+    <td class="td-title" title="${t.title}">${t.title}</td>
+    <td class="td-co" title="${t.company}">${t.company}</td>
+    <td>${t.location}</td>
+    <td class="td-sal">$${t.salary_total.toLocaleString()}</td>
+    <td class="td-num" style="color:#8a96a8">$${t.salary_base.toLocaleString()}</td>
+    <td class="td-num">${t.yoe}yr</td>
+    <td style="font-size:11px;color:var(--text-dim)">${t.degree}</td>
+    <td>${riskBadge(t.flight_risk)}</td>
+    <td style="font-size:11px;color:var(--text-dim)">${t.remote}</td>
+    <td style="font-size:11px;color:var(--text-dim)">${t.prestige}</td>
+    <td>${stBadge(t.status)}</td>
+    <td>${t.linkedin?`<a href="https://${t.linkedin}" target="_blank" style="color:var(--accent);font-size:11px;text-decoration:none;font-weight:500;">↗ View</a>`:'—'}</td>
+  </tr>`).join('');
+}
+renderT(TALENT);
+
+function doFilter(){
+  const q=document.getElementById('tSearch').value.toLowerCase();
+  const st=document.getElementById('fStatus').value;
+  const fr=document.getElementById('fFlight').value;
+  const lo=document.getElementById('fLocation').value;
+  const re=document.getElementById('fRemote').value;
+  filtData=TALENT.filter(t=>{
+    return(!q||[t.name,t.title,t.company,t.location].some(v=>v.toLowerCase().includes(q)))
+      &&(!st||t.status===st)&&(!fr||t.flight_risk===fr)
+      &&(!lo||t.location.toLowerCase().includes(lo.toLowerCase()))
+      &&(!re||t.remote===re);
+  });
+  renderT(filtData);
+}
+function clearFilters(){
+  document.getElementById('tSearch').value='';
+  ['fStatus','fFlight','fLocation','fRemote'].forEach(id=>document.getElementById(id).value='');
+  filtData=[...TALENT]; renderT(filtData);
+}
+function srtCol(c){
+  if(sortC===c)sortD*=-1;else{sortC=c;sortD=1;}
+  document.querySelectorAll('thead th').forEach((th,i)=>th.classList.toggle('sorted',i===c));
+  const keys=['name','title','company','location','salary_total','salary_base','yoe','degree','flight_risk','remote','prestige','status'];
+  filtData.sort((a,b)=>{
+    let va=a[keys[c]],vb=b[keys[c]];
+    return typeof va==='number'?sortD*(va-vb):sortD*String(va).localeCompare(String(vb));
+  });
+  renderT(filtData);
+}
+</script>
+</body>
+</html>
